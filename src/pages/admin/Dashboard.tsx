@@ -88,6 +88,9 @@ const Dashboard = () => {
               <Link to="/admin/stats">
                 <Button size="sm" variant="outline">Estatísticas</Button>
               </Link>
+              <a href="/portfolio" target="_blank" rel="noopener noreferrer">
+                <Button size="sm" variant="outline">Ver portfólio</Button>
+              </a>
             </div>
           </CardContent>
         </Card>
