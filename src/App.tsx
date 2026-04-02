@@ -55,6 +55,14 @@ const App = () => (
               }
             />
             <Route
+              path="/admin/produtos/:id/editar"
+              element={
+                <ProtectedRoute>
+                  <EditProduct />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/admin/stats"
               element={
                 <ProtectedRoute>
