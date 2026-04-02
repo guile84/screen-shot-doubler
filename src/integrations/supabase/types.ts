@@ -14,7 +14,129 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clicks: {
+        Row: {
+          clicked_at: string
+          id: string
+          ip_address: string | null
+          product_id: string
+          referrer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          clicked_at?: string
+          id?: string
+          ip_address?: string | null
+          product_id: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          clicked_at?: string
+          id?: string
+          ip_address?: string | null
+          product_id?: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clicks_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media: {
+        Row: {
+          created_at: string
+          id: string
+          is_main: boolean
+          product_id: string
+          type: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_main?: boolean
+          product_id: string
+          type?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_main?: boolean
+          product_id?: string
+          type?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          affiliate_url: string
+          coupon_code: string | null
+          created_at: string
+          description: string | null
+          id: string
+          main_image_id: string | null
+          name: string
+          price: number | null
+          slug: string
+          status: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          affiliate_url: string
+          coupon_code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          main_image_id?: string | null
+          name: string
+          price?: number | null
+          slug: string
+          status?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          affiliate_url?: string
+          coupon_code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          main_image_id?: string | null
+          name?: string
+          price?: number | null
+          slug?: string
+          status?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_main_image"
+            columns: ["main_image_id"]
+            isOneToOne: false
+            referencedRelation: "media"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
