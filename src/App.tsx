@@ -14,6 +14,7 @@ import EditProduct from "./pages/admin/EditProduct.tsx";
 import Stats from "./pages/admin/Stats.tsx";
 import PublicProduct from "./pages/PublicProduct.tsx";
 import GoRedirect from "./pages/GoRedirect.tsx";
+import Portfolio from "./pages/Portfolio.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
