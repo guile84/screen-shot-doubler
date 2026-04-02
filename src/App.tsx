@@ -10,6 +10,7 @@ import Login from "./pages/Login.tsx";
 import Dashboard from "./pages/admin/Dashboard.tsx";
 import Products from "./pages/admin/Products.tsx";
 import NewProduct from "./pages/admin/NewProduct.tsx";
+import EditProduct from "./pages/admin/EditProduct.tsx";
 import Stats from "./pages/admin/Stats.tsx";
 import PublicProduct from "./pages/PublicProduct.tsx";
 import GoRedirect from "./pages/GoRedirect.tsx";
