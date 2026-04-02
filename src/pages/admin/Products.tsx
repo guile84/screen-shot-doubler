@@ -1,17 +1,125 @@
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/AdminLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  Copy,
+  Play,
+  Pause,
+  ExternalLink,
+  MousePointerClick,
+  Loader2,
+  Package,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+type StatusFilter = "all" | "active" | "paused";
 
 const Products = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  const { data: products, isLoading } = useQuery({
+    queryKey: ["admin-products"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Get click counts
+  const { data: clickCounts } = useQuery({
+    queryKey: ["product-click-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clicks")
+        .select("product_id");
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      data?.forEach((c) => {
+        counts[c.product_id] = (counts[c.product_id] || 0) + 1;
+      });
+      return counts;
+    },
+  });
+
+  const filtered = products?.filter((p) => {
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || p.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === "active" ? "paused" : "active";
+    const { error } = await supabase
+      .from("products")
+      .update({ status: newStatus })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast({ title: newStatus === "active" ? "Produto ativado" : "Produto pausado" });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast({ title: "Produto excluído" });
+    }
+  };
+
+  const copyPublicLink = (slug: string) => {
+    const url = `${window.location.origin}/p/${slug}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: "Link copiado!" });
+  };
+
+  const statusFilters: { label: string; value: StatusFilter }[] = [
+    { label: "Todos", value: "all" },
+    { label: "Ativos", value: "active" },
+    { label: "Pausados", value: "paused" },
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Produtos</h1>
-            <p className="text-sm text-muted-foreground">Gerencie seus produtos de afiliados</p>
+            <p className="text-sm text-muted-foreground">
+              {products?.length ?? 0} produto(s) cadastrado(s)
+            </p>
           </div>
           <Link to="/admin/produtos/novo">
             <Button>
@@ -21,14 +129,148 @@ const Products = () => {
           </Link>
         </div>
 
-        <Card className="shadow-card">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground">Galeria de produtos será implementada na Etapa 7</p>
-            <Link to="/admin/produtos/novo" className="mt-4">
-              <Button variant="outline">Cadastrar primeiro produto</Button>
-            </Link>
-          </CardContent>
-        </Card>
+        {/* Filters */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+              maxLength={100}
+            />
+          </div>
+          <div className="flex gap-1">
+            {statusFilters.map((f) => (
+              <Button
+                key={f.value}
+                variant={statusFilter === f.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter(f.value)}
+              >
+                {f.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Product grid */}
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : filtered?.length === 0 ? (
+          <Card className="shadow-card">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Package className="mb-3 h-10 w-10 text-muted-foreground" />
+              <p className="text-muted-foreground">
+                {products?.length === 0
+                  ? "Nenhum produto cadastrado"
+                  : "Nenhum produto encontrado"}
+              </p>
+              {products?.length === 0 && (
+                <Link to="/admin/produtos/novo" className="mt-4">
+                  <Button variant="outline">Cadastrar primeiro produto</Button>
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered?.map((product) => (
+              <Card key={product.id} className="shadow-card transition-shadow hover:shadow-card-hover">
+                <CardContent className="p-4">
+                  {/* Header */}
+                  <div className="mb-3 flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate font-semibold text-foreground">{product.name}</h3>
+                      <p className="truncate text-xs text-muted-foreground">/p/{product.slug}</p>
+                    </div>
+                    <Badge
+                      variant={product.status === "active" ? "default" : "secondary"}
+                      className={
+                        product.status === "active"
+                          ? "bg-success text-success-foreground"
+                          : ""
+                      }
+                    >
+                      {product.status === "active" ? "Ativo" : "Pausado"}
+                    </Badge>
+                  </div>
+
+                  {/* Info */}
+                  <div className="mb-4 flex items-center gap-4 text-sm text-muted-foreground">
+                    {product.price != null && (
+                      <span className="font-medium text-foreground">
+                        R$ {Number(product.price).toFixed(2).replace(".", ",")}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <MousePointerClick className="h-3.5 w-3.5" />
+                      {clickCounts?.[product.id] ?? 0} cliques
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-1.5">
+                    <Link to={`/admin/produtos/${product.id}/editar`}>
+                      <Button variant="outline" size="sm">
+                        <Pencil className="h-3.5 w-3.5" />
+                        Editar
+                      </Button>
+                    </Link>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyPublicLink(product.slug)}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      Link
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleToggleStatus(product.id, product.status)}
+                    >
+                      {product.status === "active" ? (
+                        <Pause className="h-3.5 w-3.5" />
+                      ) : (
+                        <Play className="h-3.5 w-3.5" />
+                      )}
+                      {product.status === "active" ? "Pausar" : "Ativar"}
+                    </Button>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir produto?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Isso excluirá permanentemente "{product.name}" e todos os dados
+                            relacionados (imagens, cliques).
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(product.id)}>
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
