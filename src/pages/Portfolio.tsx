@@ -7,6 +7,13 @@ import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 
 const Portfolio = () => {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyCoupon = useCallback((productId: string, code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedId(productId);
+    setTimeout(() => setCopiedId(null), 2000);
+  }, []);
   const { data: company } = useQuery({
     queryKey: ["company-settings"],
     queryFn: async () => {
