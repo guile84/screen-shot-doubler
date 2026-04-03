@@ -95,13 +95,31 @@ const Portfolio = () => {
         </p>
       </header>
 
-      {/* Grid */}
+      {/* Search + Grid */}
       <main className="mx-auto max-w-5xl px-4 py-8">
-        {!products || products.length === 0 ? (
-          <p className="py-20 text-center text-muted-foreground">Nenhum produto disponível no momento.</p>
+        {/* Search */}
+        <div className="relative mb-6 mx-auto max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar produto..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 pr-9"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {!filteredProducts || filteredProducts.length === 0 ? (
+          <p className="py-20 text-center text-muted-foreground">
+            {search ? "Nenhum produto encontrado." : "Nenhum produto disponível no momento."}
+          </p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => {
+            {filteredProducts.map((product) => {
               const imageUrl = mediaMap?.[product.id];
               return (
                 <div
