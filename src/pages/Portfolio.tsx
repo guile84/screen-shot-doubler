@@ -24,7 +24,7 @@ const Portfolio = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, slug, price, description, affiliate_url, created_at, main_image_id")
+        .select("id, name, slug, price, description, affiliate_url, created_at, main_image_id, coupon_code")
         .eq("status", "active")
         .order("created_at", { ascending: false });
       if (error) throw error;
