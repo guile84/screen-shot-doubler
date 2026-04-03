@@ -150,7 +150,7 @@ const Portfolio = () => {
                           <p className="font-mono text-sm font-bold tracking-wider text-foreground">{product.coupon_code}</p>
                         </div>
                         {copiedId === product.id ? (
-                          <Check className="h-4 w-4 text-green-500" />
+                          <Check className="h-4 w-4 text-primary" />
                         ) : (
                           <Copy className="h-4 w-4 text-muted-foreground" />
                         )}
