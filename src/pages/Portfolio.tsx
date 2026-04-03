@@ -68,15 +68,18 @@ const Portfolio = () => {
     enabled: productIds.length > 0,
   });
 
+  const normalize = (s: string) =>
+    s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     if (!search.trim()) return products;
-    const q = search.toLowerCase().trim();
+    const q = normalize(search.trim());
     return products.filter(
       (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.description?.toLowerCase().includes(q) ||
-        p.coupon_code?.toLowerCase().includes(q)
+        normalize(p.name).includes(q) ||
+        (p.description && normalize(p.description).includes(q)) ||
+        (p.coupon_code && normalize(p.coupon_code).includes(q))
     );
   }, [products, search]);
 
