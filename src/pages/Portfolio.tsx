@@ -68,6 +68,18 @@ const Portfolio = () => {
     enabled: productIds.length > 0,
   });
 
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    if (!search.trim()) return products;
+    const q = search.toLowerCase().trim();
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q) ||
+        p.coupon_code?.toLowerCase().includes(q)
+    );
+  }, [products, search]);
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
