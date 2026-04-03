@@ -1,15 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Package, ExternalLink } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Loader2, Package, ShoppingBag } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Portfolio = () => {
+  const { data: company } = useQuery({
+    queryKey: ["company-settings"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("company_settings")
+        .select("name, logo_url")
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
+
   const { data: products, isLoading } = useQuery({
     queryKey: ["portfolio-products"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, slug, price, description, created_at, main_image_id")
+        .select("id, name, slug, price, description, affiliate_url, created_at, main_image_id")
         .eq("status", "active")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -29,7 +41,6 @@ const Portfolio = () => {
         .in("product_id", productIds);
       const map: Record<string, string> = {};
       if (data) {
-        // For each product pick main image first, else first image
         const grouped: Record<string, typeof data> = {};
         data.forEach((m) => {
           if (!grouped[m.product_id]) grouped[m.product_id] = [];
@@ -57,9 +68,15 @@ const Portfolio = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card px-6 py-6 text-center">
-        <div className="mx-auto flex max-w-5xl items-center justify-center gap-2">
-          <Package className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">Nossos Produtos</h1>
+        <div className="mx-auto flex max-w-5xl items-center justify-center gap-3">
+          {company?.logo_url ? (
+            <img src={company.logo_url} alt={company.name || "Logo"} className="h-10 w-10 rounded-lg object-contain" />
+          ) : (
+            <Package className="h-6 w-6 text-primary" />
+          )}
+          <h1 className="text-2xl font-bold text-foreground">
+            {company?.name || "Nossos Produtos"}
+          </h1>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
           Confira nossa seleção de produtos recomendados
@@ -75,9 +92,8 @@ const Portfolio = () => {
             {products.map((product) => {
               const imageUrl = mediaMap?.[product.id];
               return (
-                <Link
+                <div
                   key={product.id}
-                  to={`/p/${product.slug}`}
                   className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-md hover:-translate-y-1"
                 >
                   {/* Image */}
@@ -98,7 +114,7 @@ const Portfolio = () => {
 
                   {/* Info */}
                   <div className="space-y-2 p-4">
-                    <h2 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                    <h2 className="font-semibold text-foreground line-clamp-2">
                       {product.name}
                     </h2>
                     {product.description && (
@@ -112,12 +128,20 @@ const Portfolio = () => {
                       ) : (
                         <span />
                       )}
-                      <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors">
-                        Ver mais <ExternalLink className="h-3 w-3" />
-                      </span>
                     </div>
+                    <a
+                      href={product.affiliate_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <Button className="w-full gap-2" size="sm">
+                        <ShoppingBag className="h-4 w-4" />
+                        Ver Produto
+                      </Button>
+                    </a>
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>
@@ -126,7 +150,7 @@ const Portfolio = () => {
 
       {/* Footer */}
       <footer className="border-t border-border px-6 py-4 text-center text-xs text-muted-foreground">
-        Portfólio de Produtos — Todos os direitos reservados
+        {company?.name ? `${company.name} — ` : ""}Todos os direitos reservados
       </footer>
     </div>
   );

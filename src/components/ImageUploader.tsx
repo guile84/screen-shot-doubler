@@ -1,8 +1,9 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, X, Star, Loader2, ImageIcon } from "lucide-react";
+import { Upload, X, Star, Loader2, Link as LinkIcon } from "lucide-react";
 
 interface MediaItem {
   id: string;
@@ -11,70 +12,125 @@ interface MediaItem {
 }
 
 interface ImageUploaderProps {
-  productId: string;
+  productId: string | null;
   images: MediaItem[];
   onImagesChange: (images: MediaItem[]) => void;
+  pendingFiles?: File[];
+  onPendingFilesChange?: (files: File[]) => void;
 }
 
-const ImageUploader = ({ productId, images, onImagesChange }: ImageUploaderProps) => {
+const ImageUploader = ({ productId, images, onImagesChange, pendingFiles = [], onPendingFilesChange }: ImageUploaderProps) => {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [downloadingUrl, setDownloadingUrl] = useState(false);
 
+  // Upload files to storage and create media records
   const uploadFiles = useCallback(
-    async (files: FileList | null) => {
-      if (!files || files.length === 0) return;
-      setUploading(true);
+    async (files: FileList | File[] | null) => {
+      if (!files || (files instanceof FileList && files.length === 0)) return;
+      const fileArray = Array.from(files);
 
+      // If no productId yet, store as pending
+      if (!productId) {
+        if (onPendingFilesChange) {
+          onPendingFilesChange([...pendingFiles, ...fileArray.filter(f => f.type.startsWith("image/") && f.size <= 5 * 1024 * 1024)]);
+        }
+        return;
+      }
+
+      setUploading(true);
       try {
         const newImages: MediaItem[] = [];
-
-        for (const file of Array.from(files)) {
+        for (const file of fileArray) {
           if (!file.type.startsWith("image/")) continue;
           if (file.size > 5 * 1024 * 1024) {
             toast({ title: "Imagem muito grande", description: `${file.name} excede 5MB`, variant: "destructive" });
             continue;
           }
-
           const ext = file.name.split(".").pop();
           const path = `${productId}/${crypto.randomUUID()}.${ext}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from("product-images")
-            .upload(path, file);
+          const { error: uploadError } = await supabase.storage.from("product-images").upload(path, file);
           if (uploadError) throw uploadError;
-
-          const { data: urlData } = supabase.storage
-            .from("product-images")
-            .getPublicUrl(path);
-
+          const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(path);
           const isMain = images.length === 0 && newImages.length === 0;
-
           const { data: media, error: dbError } = await supabase
             .from("media")
             .insert({ product_id: productId, url: urlData.publicUrl, type: "image", is_main: isMain })
             .select()
             .single();
           if (dbError) throw dbError;
-
           if (isMain) {
             await supabase.from("products").update({ main_image_id: media.id }).eq("id", productId);
           }
-
           newImages.push(media);
         }
-
         onImagesChange([...images, ...newImages]);
-        toast({ title: `${newImages.length} imagem(ns) enviada(s)` });
+        if (newImages.length > 0) toast({ title: `${newImages.length} imagem(ns) enviada(s)` });
       } catch (err: any) {
         toast({ title: "Erro ao enviar", description: err.message, variant: "destructive" });
       } finally {
         setUploading(false);
       }
     },
-    [productId, images, onImagesChange, toast]
+    [productId, images, onImagesChange, toast, pendingFiles, onPendingFilesChange]
   );
 
+  // Download image from URL via edge function
+  const handleUrlDownload = async () => {
+    if (!imageUrl.trim()) return;
+
+    if (!productId) {
+      toast({ title: "Salve o produto primeiro para adicionar imagens por URL", variant: "destructive" });
+      return;
+    }
+
+    setDownloadingUrl(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/download-image`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ imageUrl: imageUrl.trim(), productId }),
+        }
+      );
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Erro ao baixar imagem");
+
+      const isMain = images.length === 0;
+      const { data: media, error: dbError } = await supabase
+        .from("media")
+        .insert({ product_id: productId, url: result.publicUrl, type: "image", is_main: isMain })
+        .select()
+        .single();
+      if (dbError) throw dbError;
+
+      if (isMain) {
+        await supabase.from("products").update({ main_image_id: media.id }).eq("id", productId);
+      }
+
+      onImagesChange([...images, media]);
+      setImageUrl("");
+      setShowUrlInput(false);
+      toast({ title: "Imagem baixada e salva!" });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
+      setDownloadingUrl(false);
+    }
+  };
+
   const setMainImage = async (mediaId: string) => {
+    if (!productId) return;
     await supabase.from("media").update({ is_main: false }).eq("product_id", productId);
     await supabase.from("media").update({ is_main: true }).eq("id", mediaId);
     await supabase.from("products").update({ main_image_id: mediaId }).eq("id", productId);
@@ -82,10 +138,10 @@ const ImageUploader = ({ productId, images, onImagesChange }: ImageUploaderProps
   };
 
   const deleteImage = async (media: MediaItem) => {
+    if (!productId) return;
     const path = media.url.split("/product-images/")[1];
     if (path) await supabase.storage.from("product-images").remove([path]);
     await supabase.from("media").delete().eq("id", media.id);
-
     const remaining = images.filter((i) => i.id !== media.id);
     if (media.is_main && remaining.length > 0) {
       await setMainImage(remaining[0].id);
@@ -97,6 +153,13 @@ const ImageUploader = ({ productId, images, onImagesChange }: ImageUploaderProps
     onImagesChange(remaining);
   };
 
+  // Preview for pending files (not yet uploaded)
+  const pendingPreviews = pendingFiles.map((file, i) => ({
+    key: `pending-${i}`,
+    name: file.name,
+    preview: URL.createObjectURL(file),
+  }));
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-2">
@@ -104,24 +167,10 @@ const ImageUploader = ({ productId, images, onImagesChange }: ImageUploaderProps
           <div key={img.id} className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted">
             <img src={img.url} alt="" className="h-full w-full object-cover" />
             <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-              <Button
-                type="button"
-                size="icon"
-                variant="secondary"
-                className="h-7 w-7"
-                onClick={() => setMainImage(img.id)}
-                title="Definir como principal"
-              >
+              <Button type="button" size="icon" variant="secondary" className="h-7 w-7" onClick={() => setMainImage(img.id)} title="Definir como principal">
                 <Star className={`h-3.5 w-3.5 ${img.is_main ? "fill-warning text-warning" : ""}`} />
               </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="destructive"
-                className="h-7 w-7"
-                onClick={() => deleteImage(img)}
-                title="Remover"
-              >
+              <Button type="button" size="icon" variant="destructive" className="h-7 w-7" onClick={() => deleteImage(img)} title="Remover">
                 <X className="h-3.5 w-3.5" />
               </Button>
             </div>
@@ -130,6 +179,30 @@ const ImageUploader = ({ productId, images, onImagesChange }: ImageUploaderProps
                 Principal
               </span>
             )}
+          </div>
+        ))}
+
+        {/* Pending file previews */}
+        {pendingPreviews.map((p) => (
+          <div key={p.key} className="relative aspect-square overflow-hidden rounded-lg border-2 border-dashed border-primary/30 bg-muted">
+            <img src={p.preview} alt={p.name} className="h-full w-full object-cover opacity-60" />
+            <span className="absolute bottom-1 left-1 right-1 rounded bg-primary/80 px-1 py-0.5 text-center text-[9px] font-medium text-primary-foreground">
+              Pendente
+            </span>
+            <Button
+              type="button"
+              size="icon"
+              variant="destructive"
+              className="absolute right-1 top-1 h-5 w-5"
+              onClick={() => {
+                if (onPendingFilesChange) {
+                  const idx = parseInt(p.key.split("-")[1]);
+                  onPendingFilesChange(pendingFiles.filter((_, i) => i !== idx));
+                }
+              }}
+            >
+              <X className="h-3 w-3" />
+            </Button>
           </div>
         ))}
 
@@ -152,7 +225,38 @@ const ImageUploader = ({ productId, images, onImagesChange }: ImageUploaderProps
           />
         </label>
       </div>
-      <p className="text-xs text-muted-foreground">Máx. 5MB por imagem. A estrela define a imagem principal.</p>
+
+      {/* URL input */}
+      {productId && (
+        <>
+          {showUrlInput ? (
+            <div className="flex gap-2">
+              <Input
+                placeholder="https://exemplo.com/imagem.jpg"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                className="text-sm"
+              />
+              <Button type="button" size="sm" onClick={handleUrlDownload} disabled={downloadingUrl || !imageUrl.trim()}>
+                {downloadingUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : "Baixar"}
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => { setShowUrlInput(false); setImageUrl(""); }}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Button type="button" variant="outline" size="sm" className="w-full gap-2" onClick={() => setShowUrlInput(true)}>
+              <LinkIcon className="h-3.5 w-3.5" />
+              Adicionar por URL
+            </Button>
+          )}
+        </>
+      )}
+
+      <p className="text-xs text-muted-foreground">
+        Máx. 5MB por imagem. A estrela define a imagem principal.
+        {!productId && " As imagens serão enviadas ao salvar o produto."}
+      </p>
     </div>
   );
 };

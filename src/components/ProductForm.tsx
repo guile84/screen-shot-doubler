@@ -49,6 +49,7 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [productId, setProductId] = useState<string | null>(initialData?.id ?? null);
   const [images, setImages] = useState<{ id: string; url: string; is_main: boolean }[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
   // Load images for existing product
   useEffect(() => {
@@ -89,6 +90,32 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Upload pending files after product creation
+  const uploadPendingFiles = async (newProductId: string) => {
+    if (pendingFiles.length === 0) return;
+    const newImages: { id: string; url: string; is_main: boolean }[] = [];
+    for (const file of pendingFiles) {
+      const ext = file.name.split(".").pop();
+      const path = `${newProductId}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("product-images").upload(path, file);
+      if (uploadError) continue;
+      const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(path);
+      const isMain = newImages.length === 0;
+      const { data: media, error: dbError } = await supabase
+        .from("media")
+        .insert({ product_id: newProductId, url: urlData.publicUrl, type: "image", is_main: isMain })
+        .select()
+        .single();
+      if (dbError) continue;
+      if (isMain) {
+        await supabase.from("products").update({ main_image_id: media.id }).eq("id", newProductId);
+      }
+      newImages.push(media);
+    }
+    setPendingFiles([]);
+    setImages(newImages);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -110,6 +137,7 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
         const { error } = await supabase.from("products").update(payload).eq("id", initialData.id);
         if (error) throw error;
         toast({ title: "Produto atualizado!" });
+        navigate("/admin/produtos");
       } else {
         const { data, error } = await supabase.from("products").insert(payload).select().single();
         if (error) {
@@ -120,12 +148,11 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
           throw error;
         }
         setProductId(data.id);
-        toast({ title: "Produto cadastrado! Agora adicione imagens." });
-        // Don't navigate yet so user can add images
-        return;
+        // Upload pending images
+        await uploadPendingFiles(data.id);
+        toast({ title: "Produto cadastrado com sucesso!" });
+        navigate("/admin/produtos");
       }
-
-      navigate("/admin/produtos");
     } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } finally {
@@ -143,10 +170,10 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            {isEditing ? "Editar produto" : productId ? "Adicionar imagens" : "Novo produto"}
+            {isEditing ? "Editar produto" : "Novo produto"}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {isEditing ? "Atualize as informações do produto" : productId ? "Envie fotos do produto" : "Cadastre um novo produto de afiliado"}
+            {isEditing ? "Atualize as informações do produto" : "Cadastre um novo produto de afiliado"}
           </p>
         </div>
       </div>
@@ -158,18 +185,18 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome do produto *</Label>
-                <Input id="name" placeholder="Ex: Tênis Nike Air Max" value={form.name} onChange={(e) => updateField("name", e.target.value)} maxLength={200} disabled={!!productId && !isEditing} />
+                <Input id="name" placeholder="Ex: Tênis Nike Air Max" value={form.name} onChange={(e) => updateField("name", e.target.value)} maxLength={200} />
                 {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="slug">Slug (URL) *</Label>
-                <Input id="slug" placeholder="tenis-nike-air-max" value={form.slug} onChange={(e) => { setSlugManuallyEdited(true); updateField("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")); }} maxLength={200} disabled={!!productId && !isEditing} />
+                <Input id="slug" placeholder="tenis-nike-air-max" value={form.slug} onChange={(e) => { setSlugManuallyEdited(true); updateField("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")); }} maxLength={200} />
                 {errors.slug && <p className="text-xs text-destructive">{errors.slug}</p>}
                 {form.slug && <p className="text-xs text-muted-foreground">Link público: /p/{form.slug}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Descrição</Label>
-                <Textarea id="description" placeholder="Descreva o produto..." value={form.description} onChange={(e) => updateField("description", e.target.value)} rows={4} maxLength={5000} disabled={!!productId && !isEditing} />
+                <Textarea id="description" placeholder="Descreva o produto..." value={form.description} onChange={(e) => updateField("description", e.target.value)} rows={4} maxLength={5000} />
                 {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
               </div>
             </CardContent>
@@ -181,12 +208,12 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="price">Preço (R$)</Label>
-                  <Input id="price" type="number" step="0.01" min="0" placeholder="299.90" value={form.price} onChange={(e) => updateField("price", e.target.value)} disabled={!!productId && !isEditing} />
+                  <Input id="price" type="number" step="0.01" min="0" placeholder="299.90" value={form.price} onChange={(e) => updateField("price", e.target.value)} />
                   {errors.price && <p className="text-xs text-destructive">{errors.price}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="coupon_code">Código de cupom</Label>
-                  <Input id="coupon_code" placeholder="PROMO10" value={form.coupon_code} onChange={(e) => updateField("coupon_code", e.target.value.toUpperCase())} maxLength={50} disabled={!!productId && !isEditing} />
+                  <Input id="coupon_code" placeholder="PROMO10" value={form.coupon_code} onChange={(e) => updateField("coupon_code", e.target.value.toUpperCase())} maxLength={50} />
                 </div>
               </div>
             </CardContent>
@@ -197,12 +224,12 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="affiliate_url">Link de afiliado *</Label>
-                <Input id="affiliate_url" type="url" placeholder="https://..." value={form.affiliate_url} onChange={(e) => updateField("affiliate_url", e.target.value)} disabled={!!productId && !isEditing} />
+                <Input id="affiliate_url" type="url" placeholder="https://..." value={form.affiliate_url} onChange={(e) => updateField("affiliate_url", e.target.value)} />
                 {errors.affiliate_url && <p className="text-xs text-destructive">{errors.affiliate_url}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="video_url">Link de vídeo (YouTube ou Vimeo)</Label>
-                <Input id="video_url" type="url" placeholder="https://youtube.com/watch?v=..." value={form.video_url} onChange={(e) => updateField("video_url", e.target.value)} disabled={!!productId && !isEditing} />
+                <Input id="video_url" type="url" placeholder="https://youtube.com/watch?v=..." value={form.video_url} onChange={(e) => updateField("video_url", e.target.value)} />
                 {errors.video_url && <p className="text-xs text-destructive">{errors.video_url}</p>}
               </div>
             </CardContent>
@@ -218,40 +245,31 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
                   <p className="text-sm font-medium text-foreground">{form.status === "active" ? "Ativo" : "Pausado"}</p>
                   <p className="text-xs text-muted-foreground">{form.status === "active" ? "Produto visível na página pública" : "Produto oculto da página pública"}</p>
                 </div>
-                <Switch checked={form.status === "active"} onCheckedChange={(checked) => updateField("status", checked ? "active" : "paused")} disabled={!!productId && !isEditing} />
+                <Switch checked={form.status === "active"} onCheckedChange={(checked) => updateField("status", checked ? "active" : "paused")} />
               </div>
             </CardContent>
           </Card>
 
-          {/* Image upload - only after product is saved */}
-          {productId && (
-            <Card className="shadow-card">
-              <CardHeader><CardTitle className="text-base">Imagens</CardTitle></CardHeader>
-              <CardContent>
-                <ImageUploader productId={productId} images={images} onImagesChange={setImages} />
-              </CardContent>
-            </Card>
-          )}
+          {/* Image upload - always visible */}
+          <Card className="shadow-card">
+            <CardHeader><CardTitle className="text-base">Imagens</CardTitle></CardHeader>
+            <CardContent>
+              <ImageUploader
+                productId={productId}
+                images={images}
+                onImagesChange={setImages}
+                pendingFiles={pendingFiles}
+                onPendingFilesChange={setPendingFiles}
+              />
+            </CardContent>
+          </Card>
 
           <Card className="shadow-card">
             <CardContent className="pt-6 space-y-2">
-              {!productId && (
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {isEditing ? "Salvar alterações" : "Cadastrar produto"}
-                </Button>
-              )}
-              {isEditing && (
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Salvar alterações
-                </Button>
-              )}
-              {productId && !isEditing && (
-                <Button type="button" className="w-full" variant="outline" onClick={() => navigate("/admin/produtos")}>
-                  Concluir
-                </Button>
-              )}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isEditing ? "Salvar alterações" : "Cadastrar produto"}
+              </Button>
             </CardContent>
           </Card>
         </div>
