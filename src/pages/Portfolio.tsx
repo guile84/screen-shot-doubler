@@ -5,9 +5,11 @@ import { useState, useCallback } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const Portfolio = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const copyCoupon = useCallback((productId: string, code: string) => {
     navigator.clipboard.writeText(code);
