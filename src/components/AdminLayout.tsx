@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, BarChart3, LogOut, Plus, Globe } from "lucide-react";
+import { LayoutDashboard, Package, BarChart3, LogOut, Plus, Globe, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
