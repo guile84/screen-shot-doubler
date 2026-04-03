@@ -123,22 +123,39 @@ const Portfolio = () => {
                   </div>
 
                   {/* Info */}
-                  <div className="space-y-2 p-4">
-                    <h2 className="font-semibold text-foreground line-clamp-2">
-                      {product.name}
-                    </h2>
+                  <div className="space-y-3 p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <h2 className="font-semibold text-foreground line-clamp-2">
+                        {product.name}
+                      </h2>
+                      <span className="shrink-0 text-[11px] text-muted-foreground/70 pt-0.5">
+                        {format(new Date(product.created_at), "dd MMM yyyy", { locale: ptBR })}
+                      </span>
+                    </div>
                     {product.description && (
                       <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
                     )}
-                    <div className="flex items-center justify-between pt-1">
-                      {product.price != null ? (
-                        <span className="text-lg font-bold text-primary">
-                          R$ {Number(product.price).toFixed(2).replace(".", ",")}
-                        </span>
-                      ) : (
-                        <span />
-                      )}
-                    </div>
+                    {product.price != null && (
+                      <span className="text-lg font-bold text-primary">
+                        R$ {Number(product.price).toFixed(2).replace(".", ",")}
+                      </span>
+                    )}
+                    {product.coupon_code && (
+                      <button
+                        onClick={() => copyCoupon(product.id, product.coupon_code!)}
+                        className="flex w-full items-center justify-between rounded-lg border border-dashed border-primary/30 bg-primary/5 px-3 py-2 transition-colors hover:bg-primary/10"
+                      >
+                        <div className="text-left">
+                          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Cupom</p>
+                          <p className="font-mono text-sm font-bold tracking-wider text-foreground">{product.coupon_code}</p>
+                        </div>
+                        {copiedId === product.id ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Copy className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </button>
+                    )}
                     <a
                       href={product.affiliate_url}
                       target="_blank"
