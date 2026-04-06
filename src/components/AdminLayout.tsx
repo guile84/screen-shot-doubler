@@ -1,15 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, BarChart3, LogOut, Plus, Globe, Settings } from "lucide-react";
+import { LayoutDashboard, Package, BarChart3, LogOut, Plus, Globe, Settings, Ticket } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { to: "/admin/produtos", label: "Produtos", icon: Package },
+  { to: "/admin/cupons", label: "Cupons", icon: Ticket },
   { to: "/admin/stats", label: "Estatísticas", icon: BarChart3 },
   { to: "/admin/empresa", label: "Empresa", icon: Settings },
-  { to: "/portfolio", label: "Portfólio", icon: Globe, external: true },
+  { to: "/", label: "Portfólio", icon: Globe, external: true },
 ];
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {

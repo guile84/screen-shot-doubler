@@ -1,21 +1,34 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Package, ShoppingBag, Copy, Check, Search, X } from "lucide-react";
+import { Loader2, Package, ShoppingBag, Copy, Check, Search, X, ExternalLink, Ticket } from "lucide-react";
 import { useState, useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+const normalize = (s: string) =>
+  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 const Portfolio = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  const copyCoupon = useCallback((productId: string, code: string) => {
+  const copyCoupon = useCallback((id: string, code: string) => {
     navigator.clipboard.writeText(code);
-    setCopiedId(productId);
+    setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   }, []);
+
   const { data: company } = useQuery({
     queryKey: ["company-settings"],
     queryFn: async () => {
@@ -28,7 +41,7 @@ const Portfolio = () => {
     },
   });
 
-  const { data: products, isLoading } = useQuery({
+  const { data: products, isLoading: loadingProducts } = useQuery({
     queryKey: ["portfolio-products"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -68,8 +81,18 @@ const Portfolio = () => {
     enabled: productIds.length > 0,
   });
 
-  const normalize = (s: string) =>
-    s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const { data: coupons, isLoading: loadingCoupons } = useQuery({
+    queryKey: ["portfolio-coupons"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("*")
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
@@ -82,6 +105,19 @@ const Portfolio = () => {
         (p.coupon_code && normalize(p.coupon_code).includes(q))
     );
   }, [products, search]);
+
+  const filteredCoupons = useMemo(() => {
+    if (!coupons) return [];
+    if (!search.trim()) return coupons;
+    const q = normalize(search.trim());
+    return coupons.filter(
+      (c) =>
+        normalize(c.description).includes(q) ||
+        (c.coupon_code && normalize(c.coupon_code).includes(q))
+    );
+  }, [coupons, search]);
+
+  const isLoading = loadingProducts || loadingCoupons;
 
   if (isLoading) {
     return (
@@ -106,17 +142,17 @@ const Portfolio = () => {
           </h1>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          Confira nossa seleção de produtos recomendados
+          Confira nossa seleção de produtos e cupons recomendados
         </p>
       </header>
 
-      {/* Search + Grid */}
+      {/* Main */}
       <main className="mx-auto max-w-5xl px-4 py-8">
         {/* Search */}
         <div className="relative mb-6 mx-auto max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar produto..."
+            placeholder="Buscar..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 pr-9"
@@ -128,86 +164,157 @@ const Portfolio = () => {
           )}
         </div>
 
-        {!filteredProducts || filteredProducts.length === 0 ? (
-          <p className="py-20 text-center text-muted-foreground">
-            {search ? "Nenhum produto encontrado." : "Nenhum produto disponível no momento."}
-          </p>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredProducts.map((product) => {
-              const imageUrl = mediaMap?.[product.id];
-              return (
-                <div
-                  key={product.id}
-                  className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-md hover:-translate-y-1"
-                >
-                  {/* Image */}
-                  <div className="aspect-square w-full overflow-hidden bg-muted">
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={product.name}
-                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <Package className="h-12 w-12 text-muted-foreground/40" />
-                      </div>
-                    )}
-                  </div>
+        <Tabs defaultValue="products">
+          <TabsList className="mb-6 w-full max-w-xs mx-auto">
+            <TabsTrigger value="products" className="flex-1 gap-1.5">
+              <Package className="h-4 w-4" /> Produtos
+            </TabsTrigger>
+            <TabsTrigger value="coupons" className="flex-1 gap-1.5">
+              <Ticket className="h-4 w-4" /> Cupons
+            </TabsTrigger>
+          </TabsList>
 
-                  {/* Info */}
-                  <div className="space-y-3 p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <h2 className="font-semibold text-foreground line-clamp-2">
-                        {product.name}
-                      </h2>
-                      <span className="shrink-0 text-[11px] text-muted-foreground/70 pt-0.5">
-                        {format(new Date(product.created_at), "dd MMM yyyy", { locale: ptBR })}
-                      </span>
-                    </div>
-                    {product.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
-                    )}
-                    {product.price != null && (
-                      <span className="text-lg font-bold text-primary">
-                        R$ {Number(product.price).toFixed(2).replace(".", ",")}
-                      </span>
-                    )}
-                    {product.coupon_code && (
-                      <button
-                        onClick={() => copyCoupon(product.id, product.coupon_code!)}
-                        className="flex w-full items-center justify-between rounded-lg border border-dashed border-primary/30 bg-primary/5 px-3 py-2 transition-colors hover:bg-primary/10"
-                      >
-                        <div className="text-left">
-                          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Cupom</p>
-                          <p className="font-mono text-sm font-bold tracking-wider text-foreground">{product.coupon_code}</p>
-                        </div>
-                        {copiedId === product.id ? (
-                          <Check className="h-4 w-4 text-primary" />
-                        ) : (
-                          <Copy className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </button>
-                    )}
-                    <a
-                      href={product.affiliate_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block"
+          {/* Products Tab */}
+          <TabsContent value="products">
+            {filteredProducts.length === 0 ? (
+              <p className="py-20 text-center text-muted-foreground">
+                {search ? "Nenhum produto encontrado." : "Nenhum produto disponível no momento."}
+              </p>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredProducts.map((product) => {
+                  const imageUrl = mediaMap?.[product.id];
+                  return (
+                    <div
+                      key={product.id}
+                      className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-md hover:-translate-y-1"
                     >
-                      <Button className="w-full gap-2" size="sm">
-                        <ShoppingBag className="h-4 w-4" />
-                        Ver Produto
-                      </Button>
-                    </a>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                      <div className="aspect-square w-full overflow-hidden bg-muted">
+                        {imageUrl ? (
+                          <img src={imageUrl} alt={product.name} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Package className="h-12 w-12 text-muted-foreground/40" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-3 p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <h2 className="font-semibold text-foreground line-clamp-2">{product.name}</h2>
+                          <span className="shrink-0 text-[11px] text-muted-foreground/70 pt-0.5">
+                            {format(new Date(product.created_at), "dd MMM yyyy", { locale: ptBR })}
+                          </span>
+                        </div>
+                        {product.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
+                        )}
+                        {product.price != null && (
+                          <span className="text-lg font-bold text-primary">
+                            R$ {Number(product.price).toFixed(2).replace(".", ",")}
+                          </span>
+                        )}
+                        {product.coupon_code && (
+                          <button
+                            onClick={() => copyCoupon(product.id, product.coupon_code!)}
+                            className="flex w-full items-center justify-between rounded-lg border border-dashed border-primary/30 bg-primary/5 px-3 py-2 transition-colors hover:bg-primary/10"
+                          >
+                            <div className="text-left">
+                              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Cupom</p>
+                              <p className="font-mono text-sm font-bold tracking-wider text-foreground">{product.coupon_code}</p>
+                            </div>
+                            {copiedId === product.id ? (
+                              <Check className="h-4 w-4 text-primary" />
+                            ) : (
+                              <Copy className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </button>
+                        )}
+                        <a href={product.affiliate_url} target="_blank" rel="noopener noreferrer" className="block">
+                          <Button className="w-full gap-2" size="sm">
+                            <ShoppingBag className="h-4 w-4" /> Ver Produto
+                          </Button>
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Coupons Tab */}
+          <TabsContent value="coupons">
+            {filteredCoupons.length === 0 ? (
+              <p className="py-20 text-center text-muted-foreground">
+                {search ? "Nenhum cupom encontrado." : "Nenhum cupom disponível no momento."}
+              </p>
+            ) : (
+              <div className="overflow-hidden rounded-xl border border-border bg-card">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">Data</TableHead>
+                      <TableHead className="w-[64px]">Imagem</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead className="w-[140px]">Cupom</TableHead>
+                      <TableHead className="w-[100px] text-center">Ação</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCoupons.map((coupon) => (
+                      <TableRow key={coupon.id}>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                          {format(new Date(coupon.created_at), "dd MMM yyyy", { locale: ptBR })}
+                        </TableCell>
+                        <TableCell>
+                          {coupon.image_url ? (
+                            <img
+                              src={coupon.image_url}
+                              alt=""
+                              className="h-10 w-10 rounded-md object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
+                              <Ticket className="h-4 w-4 text-muted-foreground/40" />
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm text-foreground">
+                          {coupon.description}
+                        </TableCell>
+                        <TableCell>
+                          {coupon.coupon_code ? (
+                            <button
+                              onClick={() => copyCoupon(coupon.id, coupon.coupon_code!)}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-primary/30 bg-primary/5 px-2.5 py-1 font-mono text-xs font-bold tracking-wider text-foreground transition-colors hover:bg-primary/10"
+                            >
+                              {coupon.coupon_code}
+                              {copiedId === coupon.id ? (
+                                <Check className="h-3 w-3 text-primary" />
+                              ) : (
+                                <Copy className="h-3 w-3 text-muted-foreground" />
+                              )}
+                            </button>
+                          ) : (
+                            <span className="text-xs font-medium text-muted-foreground italic">Selecionados</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <a href={coupon.destination_url} target="_blank" rel="noopener noreferrer">
+                            <Button size="sm" variant="outline" className="gap-1.5">
+                              <ExternalLink className="h-3.5 w-3.5" /> Ir
+                            </Button>
+                          </a>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Footer */}
