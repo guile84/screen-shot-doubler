@@ -249,69 +249,102 @@ const Portfolio = () => {
                 {search ? "Nenhum cupom encontrado." : "Nenhum cupom disponível no momento."}
               </p>
             ) : (
-              <div className="overflow-hidden rounded-xl border border-border bg-card">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[100px]">Data</TableHead>
-                      <TableHead className="w-[64px]">Imagem</TableHead>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead className="w-[140px]">Cupom</TableHead>
-                      <TableHead className="w-[100px] text-center">Ação</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredCoupons.map((coupon) => (
-                      <TableRow key={coupon.id}>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                          {format(new Date(coupon.created_at), "dd MMM yyyy", { locale: ptBR })}
-                        </TableCell>
-                        <TableCell>
-                          {coupon.image_url ? (
-                            <img
-                              src={coupon.image_url}
-                              alt=""
-                              className="h-10 w-10 rounded-md object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
-                              <Ticket className="h-4 w-4 text-muted-foreground/40" />
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm text-foreground">
-                          {coupon.description}
-                        </TableCell>
-                        <TableCell>
+              <>
+                {/* Desktop table */}
+                <div className="hidden sm:block overflow-hidden rounded-xl border border-border bg-card">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[100px]">Data</TableHead>
+                        <TableHead className="w-[64px]">Imagem</TableHead>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead className="w-[140px]">Cupom</TableHead>
+                        <TableHead className="w-[100px] text-center">Ação</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCoupons.map((coupon) => (
+                        <TableRow key={coupon.id}>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                            {format(new Date(coupon.created_at), "dd MMM yyyy", { locale: ptBR })}
+                          </TableCell>
+                          <TableCell>
+                            {coupon.image_url ? (
+                              <img src={coupon.image_url} alt="" className="h-10 w-10 rounded-md object-cover" loading="lazy" />
+                            ) : (
+                              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
+                                <Ticket className="h-4 w-4 text-muted-foreground/40" />
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm text-foreground">{coupon.description}</TableCell>
+                          <TableCell>
+                            {coupon.coupon_code ? (
+                              <button
+                                onClick={() => copyCoupon(coupon.id, coupon.coupon_code!)}
+                                className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-primary/30 bg-primary/5 px-2.5 py-1 font-mono text-xs font-bold tracking-wider text-foreground transition-colors hover:bg-primary/10"
+                              >
+                                {coupon.coupon_code}
+                                {copiedId === coupon.id ? <Check className="h-3 w-3 text-primary" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+                              </button>
+                            ) : (
+                              <span className="text-xs font-medium text-muted-foreground italic">Selecionados</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <a href={coupon.destination_url} target="_blank" rel="noopener noreferrer">
+                              <Button size="sm" variant="outline" className="gap-1.5">
+                                <ExternalLink className="h-3.5 w-3.5" /> Ir
+                              </Button>
+                            </a>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="flex flex-col gap-3 sm:hidden">
+                  {filteredCoupons.map((coupon) => (
+                    <div key={coupon.id} className="flex gap-3 rounded-xl border border-border bg-card p-3">
+                      {coupon.image_url ? (
+                        <img src={coupon.image_url} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" loading="lazy" />
+                      ) : (
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-muted">
+                          <Ticket className="h-5 w-5 text-muted-foreground/40" />
+                        </div>
+                      )}
+                      <div className="flex min-w-0 flex-1 flex-col gap-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-medium text-foreground line-clamp-2">{coupon.description}</p>
+                          <span className="shrink-0 text-[10px] text-muted-foreground/70 pt-0.5">
+                            {format(new Date(coupon.created_at), "dd MMM", { locale: ptBR })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
                           {coupon.coupon_code ? (
                             <button
                               onClick={() => copyCoupon(coupon.id, coupon.coupon_code!)}
-                              className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-primary/30 bg-primary/5 px-2.5 py-1 font-mono text-xs font-bold tracking-wider text-foreground transition-colors hover:bg-primary/10"
+                              className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-primary/30 bg-primary/5 px-2 py-1 font-mono text-xs font-bold tracking-wider text-foreground transition-colors hover:bg-primary/10"
                             >
                               {coupon.coupon_code}
-                              {copiedId === coupon.id ? (
-                                <Check className="h-3 w-3 text-primary" />
-                              ) : (
-                                <Copy className="h-3 w-3 text-muted-foreground" />
-                              )}
+                              {copiedId === coupon.id ? <Check className="h-3 w-3 text-primary" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
                             </button>
                           ) : (
                             <span className="text-xs font-medium text-muted-foreground italic">Selecionados</span>
                           )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <a href={coupon.destination_url} target="_blank" rel="noopener noreferrer">
-                            <Button size="sm" variant="outline" className="gap-1.5">
-                              <ExternalLink className="h-3.5 w-3.5" /> Ir
+                          <a href={coupon.destination_url} target="_blank" rel="noopener noreferrer" className="ml-auto">
+                            <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2">
+                              <ExternalLink className="h-3 w-3" /> Ir
                             </Button>
                           </a>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </TabsContent>
         </Tabs>
