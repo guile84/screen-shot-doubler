@@ -73,6 +73,39 @@ export type Database = {
         }
         Relationships: []
       }
+      coupons: {
+        Row: {
+          coupon_code: string | null
+          created_at: string
+          description: string
+          destination_url: string
+          id: string
+          image_url: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          coupon_code?: string | null
+          created_at?: string
+          description: string
+          destination_url: string
+          id?: string
+          image_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          coupon_code?: string | null
+          created_at?: string
+          description?: string
+          destination_url?: string
+          id?: string
+          image_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       media: {
         Row: {
           created_at: string
