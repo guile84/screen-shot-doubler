@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Package, ShoppingBag, Copy, Check, Search, X, ExternalLink, Ticket } from "lucide-react";
 import { useState, useCallback, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,8 @@ const normalize = (s: string) =>
   s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 const Portfolio = () => {
+  const location = useLocation();
+  const defaultTab = location.pathname === "/cupons" ? "coupons" : "products";
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
@@ -164,7 +167,7 @@ const Portfolio = () => {
           )}
         </div>
 
-        <Tabs defaultValue="products">
+        <Tabs defaultValue={defaultTab}>
           <TabsList className="mb-6 w-full max-w-xs mx-auto">
             <TabsTrigger value="products" className="flex-1 gap-1.5">
               <Package className="h-4 w-4" /> Produtos
