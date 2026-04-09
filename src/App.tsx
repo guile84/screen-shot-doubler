@@ -18,10 +18,13 @@ import PublicProduct from "./pages/PublicProduct.tsx";
 import GoRedirect from "./pages/GoRedirect.tsx";
 import Portfolio from "./pages/Portfolio.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  useDynamicFavicon();
+  return (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
@@ -104,6 +107,7 @@ const App = () => (
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
