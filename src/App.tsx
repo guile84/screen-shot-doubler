@@ -30,6 +30,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Portfolio />} />
+            <Route path="/cupons" element={<Portfolio />} />
             <Route path="/login" element={<Login />} />
             <Route path="/p/:slug" element={<PublicProduct />} />
             <Route path="/go/:slug" element={<GoRedirect />} />
