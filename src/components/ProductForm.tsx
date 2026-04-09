@@ -233,7 +233,7 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="payment_method">Forma de pagamento</Label>
-                  <Select value={form.payment_method} onValueChange={(v) => updateField("payment_method", v === "none" ? "" : v)}>
+                  <Select value={form.payment_method || "none"} onValueChange={(v) => updateField("payment_method", v === "none" ? "" : v)}>
                     <SelectTrigger id="payment_method">
                       <SelectValue placeholder="Nenhuma" />
                     </SelectTrigger>
