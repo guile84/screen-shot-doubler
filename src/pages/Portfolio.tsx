@@ -383,7 +383,7 @@ const Portfolio = () => {
                           ) : (
                             <span className="text-xs font-medium text-muted-foreground italic">Selecionados</span>
                           )}
-                          <a href={coupon.destination_url} target="_blank" rel="noopener noreferrer" className="ml-auto">
+                          <a href={coupon.destination_url} target="_blank" rel="noopener noreferrer" className="ml-auto" onClick={() => trackCouponClick(coupon.id)}>
                             <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2">
                               <ExternalLink className="h-3 w-3" /> Ir
                             </Button>
