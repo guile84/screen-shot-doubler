@@ -32,6 +32,14 @@ const Portfolio = () => {
     setTimeout(() => setCopiedId(null), 2000);
   }, []);
 
+  const trackCouponClick = useCallback((couponId: string) => {
+    supabase.from("coupon_clicks").insert({
+      coupon_id: couponId,
+      user_agent: navigator.userAgent,
+      referrer: document.referrer || null,
+    } as any).then(() => {});
+  }, []);
+
   const { data: company } = useQuery({
     queryKey: ["company-settings"],
     queryFn: async () => {
@@ -333,7 +341,7 @@ const Portfolio = () => {
                             )}
                           </TableCell>
                           <TableCell className="text-center">
-                            <a href={coupon.destination_url} target="_blank" rel="noopener noreferrer">
+                            <a href={coupon.destination_url} target="_blank" rel="noopener noreferrer" onClick={() => trackCouponClick(coupon.id)}>
                               <Button size="sm" variant="outline" className="gap-1.5">
                                 <ExternalLink className="h-3.5 w-3.5" /> Ir
                               </Button>
@@ -375,7 +383,7 @@ const Portfolio = () => {
                           ) : (
                             <span className="text-xs font-medium text-muted-foreground italic">Selecionados</span>
                           )}
-                          <a href={coupon.destination_url} target="_blank" rel="noopener noreferrer" className="ml-auto">
+                          <a href={coupon.destination_url} target="_blank" rel="noopener noreferrer" className="ml-auto" onClick={() => trackCouponClick(coupon.id)}>
                             <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2">
                               <ExternalLink className="h-3 w-3" /> Ir
                             </Button>
