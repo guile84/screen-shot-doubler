@@ -57,6 +57,7 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
   const [productId, setProductId] = useState<string | null>(initialData?.id ?? null);
   const [images, setImages] = useState<{ id: string; url: string; is_main: boolean }[]>([]);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingUrls, setPendingUrls] = useState<string[]>([]);
 
   // Load images for existing product
   useEffect(() => {
@@ -97,10 +98,11 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Upload pending files after product creation
-  const uploadPendingFiles = async (newProductId: string) => {
-    if (pendingFiles.length === 0) return;
+  // Upload pending files and URLs after product creation
+  const uploadPendingMedia = async (newProductId: string) => {
     const newImages: { id: string; url: string; is_main: boolean }[] = [];
+
+    // Upload pending files
     for (const file of pendingFiles) {
       const ext = file.name.split(".").pop();
       const path = `${newProductId}/${crypto.randomUUID()}.${ext}`;
@@ -119,7 +121,38 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
       }
       newImages.push(media);
     }
+
+    // Download pending URLs
+    for (const url of pendingUrls) {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/download-image`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ imageUrl: url, productId: newProductId }),
+          }
+        );
+        const result = await res.json();
+        if (!res.ok) continue;
+        const isMain = newImages.length === 0;
+        const { data: media, error: dbError } = await supabase
+          .from("media")
+          .insert({ product_id: newProductId, url: result.publicUrl, type: "image", is_main: isMain })
+          .select()
+          .single();
+        if (dbError) continue;
+        if (isMain) {
+          await supabase.from("products").update({ main_image_id: media.id }).eq("id", newProductId);
+        }
+        newImages.push(media);
+      } catch { continue; }
+    }
+
     setPendingFiles([]);
+    setPendingUrls([]);
     setImages(newImages);
   };
 
@@ -159,7 +192,7 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
         }
         setProductId(data.id);
         // Upload pending images
-        await uploadPendingFiles(data.id);
+        await uploadPendingMedia(data.id);
         toast({ title: "Produto cadastrado com sucesso!" });
         navigate("/admin/produtos");
       }
@@ -295,6 +328,8 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
                 onImagesChange={setImages}
                 pendingFiles={pendingFiles}
                 onPendingFilesChange={setPendingFiles}
+                pendingUrls={pendingUrls}
+                onPendingUrlsChange={setPendingUrls}
               />
             </CardContent>
           </Card>
