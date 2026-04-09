@@ -167,7 +167,7 @@ const Portfolio = () => {
           )}
         </div>
 
-        <Tabs defaultValue="products">
+        <Tabs defaultValue={defaultTab}>
           <TabsList className="mb-6 w-full max-w-xs mx-auto">
             <TabsTrigger value="products" className="flex-1 gap-1.5">
               <Package className="h-4 w-4" /> Produtos
