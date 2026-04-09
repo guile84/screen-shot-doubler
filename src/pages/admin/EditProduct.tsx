@@ -17,7 +17,7 @@ const EditProduct = () => {
         .eq("id", id!)
         .single();
       if (error) throw error;
-      return data;
+      return data as typeof data & { original_price: number | null; final_price: number | null; payment_method: string | null };
     },
     enabled: !!id,
   });
