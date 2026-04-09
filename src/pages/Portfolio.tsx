@@ -333,7 +333,7 @@ const Portfolio = () => {
                             )}
                           </TableCell>
                           <TableCell className="text-center">
-                            <a href={coupon.destination_url} target="_blank" rel="noopener noreferrer">
+                            <a href={coupon.destination_url} target="_blank" rel="noopener noreferrer" onClick={() => trackCouponClick(coupon.id)}>
                               <Button size="sm" variant="outline" className="gap-1.5">
                                 <ExternalLink className="h-3.5 w-3.5" /> Ir
                               </Button>
