@@ -221,18 +221,20 @@ const Portfolio = () => {
                           if (orig && final_) {
                             const discount = Math.round(((orig - final_) / orig) * 100);
                             return (
-                              <div className="flex flex-wrap items-center gap-2">
+                              <div className="flex flex-col gap-0.5">
                                 <span className="text-sm text-muted-foreground line-through">
                                   R$ {orig.toFixed(2).replace(".", ",")}
                                 </span>
-                                <span className="text-lg font-bold text-primary">
-                                  R$ {final_.toFixed(2).replace(".", ",")}{pmLabel}
-                                </span>
-                                {discount > 0 && (
-                                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                                    -{discount}%
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg font-bold text-primary">
+                                    R$ {final_.toFixed(2).replace(".", ",")}{pmLabel}
                                   </span>
-                                )}
+                                  {discount > 0 && (
+                                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                                      -{discount}%
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             );
                           }

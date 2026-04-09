@@ -17,9 +17,11 @@ interface ImageUploaderProps {
   onImagesChange: (images: MediaItem[]) => void;
   pendingFiles?: File[];
   onPendingFilesChange?: (files: File[]) => void;
+  pendingUrls?: string[];
+  onPendingUrlsChange?: (urls: string[]) => void;
 }
 
-const ImageUploader = ({ productId, images, onImagesChange, pendingFiles = [], onPendingFilesChange }: ImageUploaderProps) => {
+const ImageUploader = ({ productId, images, onImagesChange, pendingFiles = [], onPendingFilesChange, pendingUrls = [], onPendingUrlsChange }: ImageUploaderProps) => {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
@@ -81,8 +83,14 @@ const ImageUploader = ({ productId, images, onImagesChange, pendingFiles = [], o
   const handleUrlDownload = async () => {
     if (!imageUrl.trim()) return;
 
+    // If no productId yet, store URL as pending
     if (!productId) {
-      toast({ title: "Salve o produto primeiro para adicionar imagens por URL", variant: "destructive" });
+      if (onPendingUrlsChange) {
+        onPendingUrlsChange([...pendingUrls, imageUrl.trim()]);
+      }
+      setImageUrl("");
+      setShowUrlInput(false);
+      toast({ title: "URL adicionada! Será baixada ao salvar o produto." });
       return;
     }
 
@@ -226,31 +234,49 @@ const ImageUploader = ({ productId, images, onImagesChange, pendingFiles = [], o
         </label>
       </div>
 
-      {/* URL input */}
-      {productId && (
-        <>
-          {showUrlInput ? (
-            <div className="flex gap-2">
-              <Input
-                placeholder="https://exemplo.com/imagem.jpg"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                className="text-sm"
-              />
-              <Button type="button" size="sm" onClick={handleUrlDownload} disabled={downloadingUrl || !imageUrl.trim()}>
-                {downloadingUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : "Baixar"}
-              </Button>
-              <Button type="button" size="sm" variant="ghost" onClick={() => { setShowUrlInput(false); setImageUrl(""); }}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <Button type="button" variant="outline" size="sm" className="w-full gap-2" onClick={() => setShowUrlInput(true)}>
-              <LinkIcon className="h-3.5 w-3.5" />
-              Adicionar por URL
-            </Button>
-          )}
-        </>
+      {/* Pending URL previews */}
+      {pendingUrls.map((url, i) => (
+        <div key={`pending-url-${i}`} className="flex items-center gap-2 rounded-lg border border-dashed border-primary/30 bg-muted/50 px-3 py-2">
+          <LinkIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <span className="flex-1 truncate text-xs text-muted-foreground">{url}</span>
+          <span className="shrink-0 text-[9px] font-medium text-primary">Pendente</span>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-5 w-5"
+            onClick={() => {
+              if (onPendingUrlsChange) {
+                onPendingUrlsChange(pendingUrls.filter((_, idx) => idx !== i));
+              }
+            }}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      ))}
+
+      {/* URL input - always visible */}
+      {showUrlInput ? (
+        <div className="flex gap-2">
+          <Input
+            placeholder="https://exemplo.com/imagem.jpg"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            className="text-sm"
+          />
+          <Button type="button" size="sm" onClick={handleUrlDownload} disabled={downloadingUrl || !imageUrl.trim()}>
+            {downloadingUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : "Baixar"}
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => { setShowUrlInput(false); setImageUrl(""); }}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <Button type="button" variant="outline" size="sm" className="w-full gap-2" onClick={() => setShowUrlInput(true)}>
+          <LinkIcon className="h-3.5 w-3.5" />
+          Adicionar por URL
+        </Button>
       )}
 
       <p className="text-xs text-muted-foreground">
