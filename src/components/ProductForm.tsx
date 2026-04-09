@@ -18,6 +18,9 @@ interface ProductFormData {
   slug: string;
   description: string;
   price: string;
+  original_price: string;
+  final_price: string;
+  payment_method: string;
   coupon_code: string;
   affiliate_url: string;
   video_url: string;
@@ -34,6 +37,9 @@ const emptyForm: ProductFormData = {
   slug: "",
   description: "",
   price: "",
+  original_price: "",
+  final_price: "",
+  payment_method: "",
   coupon_code: "",
   affiliate_url: "",
   video_url: "",
