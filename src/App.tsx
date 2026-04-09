@@ -107,8 +107,6 @@ const App = () => {
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
-);
-
   );
 };
 
