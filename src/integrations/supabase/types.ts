@@ -147,9 +147,12 @@ export type Database = {
           coupon_code: string | null
           created_at: string
           description: string | null
+          final_price: number | null
           id: string
           main_image_id: string | null
           name: string
+          original_price: number | null
+          payment_method: string | null
           price: number | null
           slug: string
           status: string
@@ -161,9 +164,12 @@ export type Database = {
           coupon_code?: string | null
           created_at?: string
           description?: string | null
+          final_price?: number | null
           id?: string
           main_image_id?: string | null
           name: string
+          original_price?: number | null
+          payment_method?: string | null
           price?: number | null
           slug: string
           status?: string
@@ -175,9 +181,12 @@ export type Database = {
           coupon_code?: string | null
           created_at?: string
           description?: string | null
+          final_price?: number | null
           id?: string
           main_image_id?: string | null
           name?: string
+          original_price?: number | null
+          payment_method?: string | null
           price?: number | null
           slug?: string
           status?: string

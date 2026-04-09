@@ -49,7 +49,7 @@ const Portfolio = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, slug, price, description, affiliate_url, created_at, main_image_id, coupon_code")
+        .select("id, name, slug, price, original_price, final_price, payment_method, description, affiliate_url, created_at, main_image_id, coupon_code")
         .eq("status", "active")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -211,11 +211,47 @@ const Portfolio = () => {
                         {product.description && (
                           <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
                         )}
-                        {product.price != null && (
-                          <span className="text-lg font-bold text-primary">
-                            R$ {Number(product.price).toFixed(2).replace(".", ",")}
-                          </span>
-                        )}
+                        {(() => {
+                          const orig = product.original_price != null ? Number(product.original_price) : null;
+                          const final_ = product.final_price != null ? Number(product.final_price) : null;
+                          const price = product.price != null ? Number(product.price) : null;
+                          const pm = product.payment_method;
+                          const pmLabel = pm === "pix" ? " no Pix" : pm === "a_vista" ? " à vista" : "";
+
+                          if (orig && final_) {
+                            const discount = Math.round(((orig - final_) / orig) * 100);
+                            return (
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-sm text-muted-foreground line-through">
+                                  R$ {orig.toFixed(2).replace(".", ",")}
+                                </span>
+                                <span className="text-lg font-bold text-primary">
+                                  R$ {final_.toFixed(2).replace(".", ",")}{pmLabel}
+                                </span>
+                                {discount > 0 && (
+                                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                                    -{discount}%
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          }
+                          if (final_) {
+                            return (
+                              <span className="text-lg font-bold text-primary">
+                                R$ {final_.toFixed(2).replace(".", ",")}{pmLabel}
+                              </span>
+                            );
+                          }
+                          if (price != null) {
+                            return (
+                              <span className="text-lg font-bold text-primary">
+                                R$ {price.toFixed(2).replace(".", ",")}{pmLabel}
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
                         {product.coupon_code && (
                           <button
                             onClick={() => copyCoupon(product.id, product.coupon_code!)}
