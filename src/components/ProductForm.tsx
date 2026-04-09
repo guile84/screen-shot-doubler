@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { generateSlug, isValidUrl, isVideoUrl } from "@/lib/product-utils";
@@ -133,6 +134,9 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
         slug: form.slug.trim(),
         description: form.description.trim() || null,
         price: form.price ? Number(form.price) : null,
+        original_price: form.original_price ? Number(form.original_price) : null,
+        final_price: form.final_price ? Number(form.final_price) : null,
+        payment_method: form.payment_method || null,
         coupon_code: form.coupon_code.trim().toUpperCase() || null,
         affiliate_url: form.affiliate_url.trim(),
         video_url: form.video_url.trim() || null,
@@ -213,10 +217,35 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="price">Preço (R$)</Label>
+                  <Label htmlFor="original_price">Preço de origem (R$)</Label>
+                  <Input id="original_price" type="number" step="0.01" min="0" placeholder="499.90" value={form.original_price} onChange={(e) => updateField("original_price", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="final_price">Preço final (R$)</Label>
+                  <Input id="final_price" type="number" step="0.01" min="0" placeholder="299.90" value={form.final_price} onChange={(e) => updateField("final_price", e.target.value)} />
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="price">Preço único (R$) <span className="text-muted-foreground text-xs">— usado se não preencher acima</span></Label>
                   <Input id="price" type="number" step="0.01" min="0" placeholder="299.90" value={form.price} onChange={(e) => updateField("price", e.target.value)} />
                   {errors.price && <p className="text-xs text-destructive">{errors.price}</p>}
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payment_method">Forma de pagamento</Label>
+                  <Select value={form.payment_method} onValueChange={(v) => updateField("payment_method", v === "none" ? "" : v)}>
+                    <SelectTrigger id="payment_method">
+                      <SelectValue placeholder="Nenhuma" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhuma</SelectItem>
+                      <SelectItem value="pix">Pix</SelectItem>
+                      <SelectItem value="a_vista">À vista</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="coupon_code">Código de cupom</Label>
                   <Input id="coupon_code" placeholder="PROMO10" value={form.coupon_code} onChange={(e) => updateField("coupon_code", e.target.value.toUpperCase())} maxLength={50} />
