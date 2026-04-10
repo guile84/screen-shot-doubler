@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Package, ShoppingBag, Copy, Check, Search, X, ExternalLink, Ticket } from "lucide-react";
+import { Loader2, Package, ShoppingBag, Copy, Check, Search, X, ExternalLink, Ticket, Globe } from "lucide-react";
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { format } from "date-fns";
@@ -107,6 +107,19 @@ const Portfolio = () => {
     },
   });
 
+  const { data: sites, isLoading: loadingSites } = useQuery({
+    queryKey: ["portfolio-sites"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sites" as any)
+        .select("*")
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     if (!search.trim()) return products;
@@ -130,7 +143,26 @@ const Portfolio = () => {
     );
   }, [coupons, search]);
 
-  const isLoading = loadingProducts || loadingCoupons;
+  const filteredSites = useMemo(() => {
+    if (!sites) return [];
+    if (!search.trim()) return sites;
+    const q = normalize(search.trim());
+    return sites.filter(
+      (s: any) =>
+        normalize(s.description).includes(q) ||
+        normalize(s.destination_url).includes(q)
+    );
+  }, [sites, search]);
+
+  const trackSiteClick = useCallback((siteId: string) => {
+    supabase.from("site_clicks" as any).insert({
+      site_id: siteId,
+      user_agent: navigator.userAgent,
+      referrer: document.referrer || null,
+    } as any).then(() => {});
+  }, []);
+
+  const isLoading = loadingProducts || loadingCoupons || loadingSites;
 
   if (isLoading) {
     return (
