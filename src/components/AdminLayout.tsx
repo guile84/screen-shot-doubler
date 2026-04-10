@@ -8,6 +8,7 @@ const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { to: "/admin/produtos", label: "Produtos", icon: Package },
   { to: "/admin/cupons", label: "Cupons", icon: Ticket },
+  { to: "/admin/sites", label: "Sites", icon: Globe },
   { to: "/admin/stats", label: "Estatísticas", icon: BarChart3 },
   { to: "/admin/empresa", label: "Empresa", icon: Settings },
   { to: "/", label: "Portfólio", icon: Globe, external: true },
