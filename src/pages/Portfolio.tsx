@@ -22,7 +22,7 @@ const normalize = (s: string) =>
 
 const Portfolio = () => {
   const location = useLocation();
-  const defaultTab = location.pathname === "/cupons" ? "coupons" : "products";
+  const defaultTab = location.pathname === "/cupons" ? "coupons" : location.pathname === "/sites" ? "sites" : "products";
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
