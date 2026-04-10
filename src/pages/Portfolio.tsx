@@ -162,44 +162,64 @@ const Portfolio = () => {
       {/* Main */}
       <main className="mx-auto max-w-5xl px-4 py-8">
         <Tabs defaultValue={defaultTab}>
-          <div className="mb-6 flex items-center justify-center gap-2">
-            <TabsList>
-              <TabsTrigger value="products" className="gap-1.5">
-                <Package className="h-4 w-4" /> Produtos
-              </TabsTrigger>
-              <TabsTrigger value="coupons" className="gap-1.5">
-                <Ticket className="h-4 w-4" /> Cupons
-              </TabsTrigger>
-            </TabsList>
+          <div className="mb-6 flex flex-col items-center gap-3">
+            <div className="flex items-center gap-2">
+              <TabsList>
+                <TabsTrigger value="products" className="gap-1.5">
+                  <Package className="h-4 w-4" /> Produtos
+                </TabsTrigger>
+                <TabsTrigger value="coupons" className="gap-1.5">
+                  <Ticket className="h-4 w-4" /> Cupons
+                </TabsTrigger>
+              </TabsList>
 
-            <div className="relative flex items-center">
-              {searchOpen ? (
-                <div className="flex items-center gap-1 animate-in slide-in-from-right-4 fade-in duration-200">
+              {/* Mobile: lupa toggle */}
+              <button
+                onClick={() => { setSearchOpen((o) => !o); if (!searchOpen) setTimeout(() => searchInputRef.current?.focus(), 100); }}
+                className="sm:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+              </button>
+            </div>
+
+            {/* Desktop: always visible */}
+            <div className="hidden sm:block w-full max-w-sm">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar produtos ou cupons..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-9 pl-9 pr-8 text-sm"
+                />
+                {search && (
+                  <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile: full-width search below tabs */}
+            {searchOpen && (
+              <div className="sm:hidden w-full animate-in slide-in-from-top-2 fade-in duration-200">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     ref={searchInputRef}
                     placeholder="Buscar..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="h-9 w-40 sm:w-56 text-sm"
-                    onBlur={() => { if (!search) setSearchOpen(false); }}
-                    autoFocus
+                    className="h-9 pl-9 pr-8 text-sm"
                   />
-                  <button
-                    onClick={() => { setSearch(""); setSearchOpen(false); }}
-                    className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  {search && (
+                    <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <button
-                  onClick={() => setSearchOpen(true)}
-                  className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                >
-                  <Search className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Products Tab */}
