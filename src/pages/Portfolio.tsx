@@ -25,6 +25,8 @@ const Portfolio = () => {
   const defaultTab = location.pathname === "/cupons" ? "coupons" : "products";
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const copyCoupon = useCallback((id: string, code: string) => {
     navigator.clipboard.writeText(code);
