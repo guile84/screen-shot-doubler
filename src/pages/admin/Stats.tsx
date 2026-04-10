@@ -125,7 +125,22 @@ const Stats = () => {
   const totalCouponClicks = couponClicks?.length ?? 0;
   const todayCouponClicks = couponClicks?.filter((c) => c.clicked_at.slice(0, 10) === new Date().toISOString().slice(0, 10)).length ?? 0;
 
-  if (isLoading || loadingCouponClicks) {
+  // Site stats
+  const siteChartData = useMemo(() => buildLast7DaysChart(siteClicks ?? []), [siteClicks]);
+  const siteRanking = useMemo(() => {
+    if (!siteClicks || !sitesData) return [];
+    const countMap: Record<string, number> = {};
+    siteClicks.forEach((c) => { countMap[c.site_id] = (countMap[c.site_id] || 0) + 1; });
+    return sitesData
+      .map((s: any) => ({ ...s, clicks: countMap[s.id] || 0 }))
+      .sort((a: any, b: any) => b.clicks - a.clicks)
+      .slice(0, 10);
+  }, [siteClicks, sitesData]);
+
+  const totalSiteClicks = siteClicks?.length ?? 0;
+  const todaySiteClicks = siteClicks?.filter((c) => c.clicked_at.slice(0, 10) === new Date().toISOString().slice(0, 10)).length ?? 0;
+
+  if (isLoading || loadingCouponClicks || loadingSiteClicks) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center py-12">
