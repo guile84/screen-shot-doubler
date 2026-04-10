@@ -162,6 +162,7 @@ const Stats = () => {
           <TabsList>
             <TabsTrigger value="products" className="gap-1.5"><Package className="h-4 w-4" /> Produtos</TabsTrigger>
             <TabsTrigger value="coupons" className="gap-1.5"><Ticket className="h-4 w-4" /> Cupons</TabsTrigger>
+            <TabsTrigger value="sites" className="gap-1.5"><Globe className="h-4 w-4" /> Sites</TabsTrigger>
           </TabsList>
 
           {/* ---- Products Tab ---- */}
