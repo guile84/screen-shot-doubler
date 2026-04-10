@@ -93,6 +93,7 @@ const App = () => {
                   <SitesAdmin />
                 </ProtectedRoute>
               }
+            />
             <Route
               path="/admin/stats"
               element={
