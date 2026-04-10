@@ -205,12 +205,13 @@ const Portfolio = () => {
               <div className="sm:hidden w-full animate-in slide-in-from-top-2 fade-in duration-200">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
+                  <input
                     ref={searchInputRef}
                     placeholder="Buscar..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="h-9 pl-9 pr-8 text-sm"
+                    className="flex h-9 w-full rounded-md border border-input bg-background pl-9 pr-8 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    style={{ fontSize: '16px' }}
                   />
                   {search && (
                     <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground">
