@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Package, ShoppingBag, Copy, Check, Search, X, ExternalLink, Ticket } from "lucide-react";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
