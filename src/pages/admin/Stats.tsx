@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, MousePointerClick, TrendingUp, Package, Ticket } from "lucide-react";
+import { Loader2, MousePointerClick, TrendingUp, Package, Ticket, Globe } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -72,6 +72,29 @@ const Stats = () => {
     },
   });
 
+  // Site clicks
+  const { data: siteClicks, isLoading: loadingSiteClicks } = useQuery({
+    queryKey: ["admin-site-clicks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("site_clicks" as any)
+        .select("id, clicked_at, site_id")
+        .order("clicked_at", { ascending: false })
+        .limit(1000);
+      if (error) throw error;
+      return data as unknown as { id: string; clicked_at: string; site_id: string }[];
+    },
+  });
+
+  const { data: sitesData } = useQuery({
+    queryKey: ["admin-sites-stats"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("sites" as any).select("id, description, destination_url");
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
   // Product stats
   const productChartData = useMemo(() => buildLast7DaysChart(clicks ?? []), [clicks]);
   const productRanking = useMemo(() => {
@@ -102,7 +125,22 @@ const Stats = () => {
   const totalCouponClicks = couponClicks?.length ?? 0;
   const todayCouponClicks = couponClicks?.filter((c) => c.clicked_at.slice(0, 10) === new Date().toISOString().slice(0, 10)).length ?? 0;
 
-  if (isLoading || loadingCouponClicks) {
+  // Site stats
+  const siteChartData = useMemo(() => buildLast7DaysChart(siteClicks ?? []), [siteClicks]);
+  const siteRanking = useMemo(() => {
+    if (!siteClicks || !sitesData) return [];
+    const countMap: Record<string, number> = {};
+    siteClicks.forEach((c) => { countMap[c.site_id] = (countMap[c.site_id] || 0) + 1; });
+    return sitesData
+      .map((s: any) => ({ ...s, clicks: countMap[s.id] || 0 }))
+      .sort((a: any, b: any) => b.clicks - a.clicks)
+      .slice(0, 10);
+  }, [siteClicks, sitesData]);
+
+  const totalSiteClicks = siteClicks?.length ?? 0;
+  const todaySiteClicks = siteClicks?.filter((c) => c.clicked_at.slice(0, 10) === new Date().toISOString().slice(0, 10)).length ?? 0;
+
+  if (isLoading || loadingCouponClicks || loadingSiteClicks) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center py-12">
@@ -124,6 +162,7 @@ const Stats = () => {
           <TabsList>
             <TabsTrigger value="products" className="gap-1.5"><Package className="h-4 w-4" /> Produtos</TabsTrigger>
             <TabsTrigger value="coupons" className="gap-1.5"><Ticket className="h-4 w-4" /> Cupons</TabsTrigger>
+            <TabsTrigger value="sites" className="gap-1.5"><Globe className="h-4 w-4" /> Sites</TabsTrigger>
           </TabsList>
 
           {/* ---- Products Tab ---- */}
@@ -266,6 +305,80 @@ const Stats = () => {
                           </div>
                         </div>
                         <span className="text-sm font-bold text-primary">{c.clicks}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ---- Sites Tab ---- */}
+          <TabsContent value="sites" className="space-y-6 mt-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Card className="shadow-card">
+                <CardContent className="flex items-center gap-4 pt-6">
+                  <div className="rounded-lg bg-primary/10 p-3"><MousePointerClick className="h-5 w-5 text-primary" /></div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{totalSiteClicks}</p>
+                    <p className="text-xs text-muted-foreground">Total de cliques</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="shadow-card">
+                <CardContent className="flex items-center gap-4 pt-6">
+                  <div className="rounded-lg bg-success/10 p-3"><TrendingUp className="h-5 w-5 text-success" /></div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{todaySiteClicks}</p>
+                    <p className="text-xs text-muted-foreground">Cliques hoje</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="shadow-card">
+                <CardContent className="flex items-center gap-4 pt-6">
+                  <div className="rounded-lg bg-info/10 p-3"><Globe className="h-5 w-5 text-info" /></div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{sitesData?.length ?? 0}</p>
+                    <p className="text-xs text-muted-foreground">Sites cadastrados</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="shadow-card">
+              <CardHeader><CardTitle className="text-base">Cliques nos últimos 7 dias</CardTitle></CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={siteChartData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="date" className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis allowDecimals={false} tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                      <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: 8 }} />
+                      <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Cliques" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-card">
+              <CardHeader><CardTitle className="text-base">Ranking de sites</CardTitle></CardHeader>
+              <CardContent>
+                {siteRanking.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum clique registrado ainda.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {siteRanking.map((s: any, i: number) => (
+                      <div key={s.id} className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">{i + 1}</span>
+                          <div>
+                            <p className="text-sm font-medium text-foreground line-clamp-1">{s.description}</p>
+                            <p className="text-xs text-muted-foreground truncate max-w-[200px]">{s.destination_url}</p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-bold text-primary">{s.clicks}</span>
                       </div>
                     ))}
                   </div>

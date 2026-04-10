@@ -14,6 +14,7 @@ import EditProduct from "./pages/admin/EditProduct.tsx";
 import Stats from "./pages/admin/Stats.tsx";
 import CompanySettings from "./pages/admin/CompanySettings.tsx";
 import Coupons from "./pages/admin/Coupons.tsx";
+import SitesAdmin from "./pages/admin/Sites.tsx";
 import PublicProduct from "./pages/PublicProduct.tsx";
 import GoRedirect from "./pages/GoRedirect.tsx";
 import Portfolio from "./pages/Portfolio.tsx";
@@ -82,6 +83,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Coupons />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/sites"
+              element={
+                <ProtectedRoute>
+                  <SitesAdmin />
                 </ProtectedRoute>
               }
             />

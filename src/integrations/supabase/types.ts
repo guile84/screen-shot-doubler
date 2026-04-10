@@ -238,6 +238,71 @@ export type Database = {
           },
         ]
       }
+      site_clicks: {
+        Row: {
+          clicked_at: string
+          id: string
+          ip_address: string | null
+          referrer: string | null
+          site_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          clicked_at?: string
+          id?: string
+          ip_address?: string | null
+          referrer?: string | null
+          site_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          clicked_at?: string
+          id?: string
+          ip_address?: string | null
+          referrer?: string | null
+          site_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_clicks_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sites: {
+        Row: {
+          created_at: string
+          description: string
+          destination_url: string
+          id: string
+          image_url: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          destination_url: string
+          id?: string
+          image_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          destination_url?: string
+          id?: string
+          image_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
