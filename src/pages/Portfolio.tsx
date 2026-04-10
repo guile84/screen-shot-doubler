@@ -278,7 +278,7 @@ const Portfolio = () => {
                             )}
                           </button>
                         )}
-                        <a href={product.affiliate_url} target="_blank" rel="noopener noreferrer" className="block">
+                        <a href={`/go/${product.slug}`} target="_blank" rel="noopener noreferrer" className="block">
                           <Button className="w-full gap-2" size="sm">
                             <ShoppingBag className="h-4 w-4" /> Ver Produto
                           </Button>
