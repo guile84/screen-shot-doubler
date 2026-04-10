@@ -312,6 +312,80 @@ const Stats = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* ---- Sites Tab ---- */}
+          <TabsContent value="sites" className="space-y-6 mt-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Card className="shadow-card">
+                <CardContent className="flex items-center gap-4 pt-6">
+                  <div className="rounded-lg bg-primary/10 p-3"><MousePointerClick className="h-5 w-5 text-primary" /></div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{totalSiteClicks}</p>
+                    <p className="text-xs text-muted-foreground">Total de cliques</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="shadow-card">
+                <CardContent className="flex items-center gap-4 pt-6">
+                  <div className="rounded-lg bg-success/10 p-3"><TrendingUp className="h-5 w-5 text-success" /></div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{todaySiteClicks}</p>
+                    <p className="text-xs text-muted-foreground">Cliques hoje</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="shadow-card">
+                <CardContent className="flex items-center gap-4 pt-6">
+                  <div className="rounded-lg bg-info/10 p-3"><Globe className="h-5 w-5 text-info" /></div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{sitesData?.length ?? 0}</p>
+                    <p className="text-xs text-muted-foreground">Sites cadastrados</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="shadow-card">
+              <CardHeader><CardTitle className="text-base">Cliques nos últimos 7 dias</CardTitle></CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={siteChartData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="date" className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis allowDecimals={false} tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                      <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", borderRadius: 8 }} />
+                      <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Cliques" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-card">
+              <CardHeader><CardTitle className="text-base">Ranking de sites</CardTitle></CardHeader>
+              <CardContent>
+                {siteRanking.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum clique registrado ainda.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {siteRanking.map((s: any, i: number) => (
+                      <div key={s.id} className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">{i + 1}</span>
+                          <div>
+                            <p className="text-sm font-medium text-foreground line-clamp-1">{s.description}</p>
+                            <p className="text-xs text-muted-foreground truncate max-w-[200px]">{s.destination_url}</p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-bold text-primary">{s.clicks}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </AdminLayout>
