@@ -72,6 +72,29 @@ const Stats = () => {
     },
   });
 
+  // Site clicks
+  const { data: siteClicks, isLoading: loadingSiteClicks } = useQuery({
+    queryKey: ["admin-site-clicks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("site_clicks" as any)
+        .select("id, clicked_at, site_id")
+        .order("clicked_at", { ascending: false })
+        .limit(1000);
+      if (error) throw error;
+      return data as unknown as { id: string; clicked_at: string; site_id: string }[];
+    },
+  });
+
+  const { data: sitesData } = useQuery({
+    queryKey: ["admin-sites-stats"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("sites" as any).select("id, description, destination_url");
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
   // Product stats
   const productChartData = useMemo(() => buildLast7DaysChart(clicks ?? []), [clicks]);
   const productRanking = useMemo(() => {
