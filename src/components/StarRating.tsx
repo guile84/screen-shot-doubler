@@ -34,7 +34,7 @@ const StarRating = ({ rating, reviewCount, size = "sm" }: StarRatingProps) => {
         })}
       </div>
       <span className={`${textSize} font-medium text-muted-foreground`}>
-        ({rating.toFixed(0)}/5)
+        ({rating.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}/5)
       </span>
       {reviewCount != null && reviewCount > 0 && (
         <span className={`${textSize} text-muted-foreground`}>
