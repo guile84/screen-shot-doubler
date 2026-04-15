@@ -57,6 +57,10 @@ const EditProduct = () => {
           affiliate_url: product.affiliate_url,
           video_url: product.video_url ?? "",
           status: product.status as "active" | "paused",
+          external_id: (product as any).external_id ?? "",
+          category: (product as any).category ?? "",
+          rating: (product as any).rating != null ? String((product as any).rating) : "",
+          review_count: (product as any).review_count != null ? String((product as any).review_count) : "",
         }}
       />
     </AdminLayout>

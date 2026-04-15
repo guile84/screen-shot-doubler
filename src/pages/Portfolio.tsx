@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Package, ShoppingBag, Copy, Check, Search, X, ExternalLink, Ticket, Globe } from "lucide-react";
+import StarRating from "@/components/StarRating";
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { format } from "date-fns";
@@ -59,7 +60,7 @@ const Portfolio = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, slug, price, original_price, final_price, payment_method, description, affiliate_url, created_at, main_image_id, coupon_code")
+        .select("id, name, slug, price, original_price, final_price, payment_method, description, affiliate_url, created_at, main_image_id, coupon_code, external_id, category, rating, review_count")
         .eq("status", "active")
         .order("created_at", { ascending: false });
       if (error) throw error;
