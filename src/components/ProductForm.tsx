@@ -188,10 +188,10 @@ const ProductForm = ({ initialData, isEditing = false }: ProductFormProps) => {
 
   const savePriceHistory = async (targetProductId: string, finalPrice: number | null) => {
     if (finalPrice == null) return;
-    await supabase.from("price_history" as any).insert({
+    await supabase.from("price_history").insert({
       product_id: targetProductId,
       price: finalPrice,
-    } as any);
+    });
   };
 
   const saveCategory = async (categoryName: string) => {
