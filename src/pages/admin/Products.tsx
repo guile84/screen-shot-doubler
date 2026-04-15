@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,7 +50,10 @@ const Products = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [quickPriceProduct, setQuickPriceProduct] = useState<any>(null);
+  const [quickOriginalPrice, setQuickOriginalPrice] = useState("");
+  const [quickFinalPrice, setQuickFinalPrice] = useState("");
   const [quickPrice, setQuickPrice] = useState("");
+  const [quickPaymentMethod, setQuickPaymentMethod] = useState("");
   const [quickCoupon, setQuickCoupon] = useState("");
   const [isSavingQuick, setIsSavingQuick] = useState(false);
 
@@ -133,7 +137,10 @@ const Products = () => {
 
   const openQuickPrice = (product: any) => {
     setQuickPriceProduct(product);
-    setQuickPrice(product.final_price != null ? String(product.final_price) : (product.price != null ? String(product.price) : ""));
+    setQuickOriginalPrice(product.original_price != null ? String(product.original_price) : "");
+    setQuickFinalPrice(product.final_price != null ? String(product.final_price) : "");
+    setQuickPrice(product.price != null ? String(product.price) : "");
+    setQuickPaymentMethod(product.payment_method ?? "");
     setQuickCoupon(product.coupon_code ?? "");
   };
 
@@ -141,24 +148,27 @@ const Products = () => {
     if (!quickPriceProduct) return;
     setIsSavingQuick(true);
     try {
-      const newFinal = quickPrice ? Number(quickPrice) : null;
+      const newFinal = quickFinalPrice ? Number(quickFinalPrice) : null;
+      const newPrice = quickPrice ? Number(quickPrice) : null;
+      const effectiveNew = newFinal ?? newPrice;
       const oldFinal = quickPriceProduct.final_price != null ? Number(quickPriceProduct.final_price) : (quickPriceProduct.price != null ? Number(quickPriceProduct.price) : null);
 
       const payload: any = {
+        original_price: quickOriginalPrice ? Number(quickOriginalPrice) : null,
+        final_price: newFinal,
+        price: newPrice,
+        payment_method: quickPaymentMethod || null,
         coupon_code: quickCoupon.trim().toUpperCase() || null,
       };
-      if (newFinal != null) {
-        payload.final_price = newFinal;
-      }
 
       const { error } = await supabase.from("products").update(payload).eq("id", quickPriceProduct.id);
       if (error) throw error;
 
-      // Save price history if changed
-      if (newFinal != null && newFinal !== oldFinal) {
+      // Save price history if value changed
+      if (effectiveNew != null && effectiveNew !== oldFinal) {
         await supabase.from("price_history").insert({
           product_id: quickPriceProduct.id,
-          price: newFinal,
+          price: effectiveNew,
         });
       }
 
@@ -369,27 +379,38 @@ const Products = () => {
             <DialogTitle>Preço e cupom — {quickPriceProduct?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="quick-price">Preço final (R$)</Label>
-              <Input
-                id="quick-price"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="299.90"
-                value={quickPrice}
-                onChange={(e) => setQuickPrice(e.target.value)}
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="quick-original-price">Preço de origem (R$)</Label>
+                <Input id="quick-original-price" type="number" step="0.01" min="0" placeholder="499.90" value={quickOriginalPrice} onChange={(e) => setQuickOriginalPrice(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quick-final-price">Preço final (R$)</Label>
+                <Input id="quick-final-price" type="number" step="0.01" min="0" placeholder="299.90" value={quickFinalPrice} onChange={(e) => setQuickFinalPrice(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="quick-price">Preço único (R$) <span className="text-xs text-muted-foreground">— usado se não preencher acima</span></Label>
+                <Input id="quick-price" type="number" step="0.01" min="0" placeholder="299.90" value={quickPrice} onChange={(e) => setQuickPrice(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quick-payment">Forma de pagamento</Label>
+                <Select value={quickPaymentMethod || "none"} onValueChange={(v) => setQuickPaymentMethod(v === "none" ? "" : v)}>
+                  <SelectTrigger id="quick-payment">
+                    <SelectValue placeholder="Nenhuma" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhuma</SelectItem>
+                    <SelectItem value="pix">Pix</SelectItem>
+                    <SelectItem value="a_vista">À vista</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="quick-coupon">Código de cupom</Label>
-              <Input
-                id="quick-coupon"
-                placeholder="PROMO10"
-                value={quickCoupon}
-                onChange={(e) => setQuickCoupon(e.target.value.toUpperCase())}
-                maxLength={50}
-              />
+              <Input id="quick-coupon" placeholder="PROMO10" value={quickCoupon} onChange={(e) => setQuickCoupon(e.target.value.toUpperCase())} maxLength={50} />
             </div>
           </div>
           <DialogFooter>
