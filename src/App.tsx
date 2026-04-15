@@ -19,6 +19,8 @@ import PublicProduct from "./pages/PublicProduct.tsx";
 import GoRedirect from "./pages/GoRedirect.tsx";
 import Portfolio from "./pages/Portfolio.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import ProfilePage from "./pages/Profile.tsx";
+import ProfileLinks from "./pages/admin/ProfileLinks.tsx";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
 
 const queryClient = new QueryClient();
@@ -108,6 +110,15 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Stats />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route
+              path="/admin/profile-links"
+              element={
+                <ProtectedRoute>
+                  <ProfileLinks />
                 </ProtectedRoute>
               }
             />
