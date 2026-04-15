@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       clicks: {
         Row: {
           clicked_at: string
@@ -176,12 +194,43 @@ export type Database = {
           },
         ]
       }
+      price_history: {
+        Row: {
+          id: string
+          price: number
+          product_id: string
+          recorded_at: string
+        }
+        Insert: {
+          id?: string
+          price: number
+          product_id: string
+          recorded_at?: string
+        }
+        Update: {
+          id?: string
+          price?: number
+          product_id?: string
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           affiliate_url: string
+          category: string | null
           coupon_code: string | null
           created_at: string
           description: string | null
+          external_id: string | null
           final_price: number | null
           id: string
           main_image_id: string | null
@@ -189,6 +238,8 @@ export type Database = {
           original_price: number | null
           payment_method: string | null
           price: number | null
+          rating: number | null
+          review_count: number | null
           slug: string
           status: string
           updated_at: string
@@ -196,9 +247,11 @@ export type Database = {
         }
         Insert: {
           affiliate_url: string
+          category?: string | null
           coupon_code?: string | null
           created_at?: string
           description?: string | null
+          external_id?: string | null
           final_price?: number | null
           id?: string
           main_image_id?: string | null
@@ -206,6 +259,8 @@ export type Database = {
           original_price?: number | null
           payment_method?: string | null
           price?: number | null
+          rating?: number | null
+          review_count?: number | null
           slug: string
           status?: string
           updated_at?: string
@@ -213,9 +268,11 @@ export type Database = {
         }
         Update: {
           affiliate_url?: string
+          category?: string | null
           coupon_code?: string | null
           created_at?: string
           description?: string | null
+          external_id?: string | null
           final_price?: number | null
           id?: string
           main_image_id?: string | null
@@ -223,6 +280,8 @@ export type Database = {
           original_price?: number | null
           payment_method?: string | null
           price?: number | null
+          rating?: number | null
+          review_count?: number | null
           slug?: string
           status?: string
           updated_at?: string
