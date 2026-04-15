@@ -297,6 +297,39 @@ export type Database = {
           },
         ]
       }
+      profile_links: {
+        Row: {
+          created_at: string
+          icon_emoji: string | null
+          id: string
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          icon_emoji?: string | null
+          id?: string
+          sort_order?: number
+          status?: string
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          icon_emoji?: string | null
+          id?: string
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       site_clicks: {
         Row: {
           clicked_at: string

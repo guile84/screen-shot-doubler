@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, BarChart3, LogOut, Plus, Globe, Settings, Ticket } from "lucide-react";
+import { LayoutDashboard, Package, BarChart3, LogOut, Plus, Globe, Settings, Ticket, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { to: "/admin/cupons", label: "Cupons", icon: Ticket },
   { to: "/admin/sites", label: "Sites", icon: Globe },
   { to: "/admin/stats", label: "Estatísticas", icon: BarChart3 },
+  { to: "/admin/profile-links", label: "Perfil", icon: Link2 },
   { to: "/admin/empresa", label: "Empresa", icon: Settings },
   { to: "/", label: "Portfólio", icon: Globe, external: true },
 ];
