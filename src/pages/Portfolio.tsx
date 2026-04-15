@@ -129,7 +129,9 @@ const Portfolio = () => {
       (p) =>
         normalize(p.name).includes(q) ||
         (p.description && normalize(p.description).includes(q)) ||
-        (p.coupon_code && normalize(p.coupon_code).includes(q))
+        (p.coupon_code && normalize(p.coupon_code).includes(q)) ||
+        ((p as any).external_id && normalize((p as any).external_id).includes(q)) ||
+        ((p as any).category && normalize((p as any).category).includes(q))
     );
   }, [products, search]);
 
@@ -284,6 +286,9 @@ const Portfolio = () => {
                         )}
                       </div>
                       <div className="space-y-3 p-4">
+                        {(product as any).rating != null && Number((product as any).rating) > 0 && (
+                          <StarRating rating={Number((product as any).rating)} reviewCount={Number((product as any).review_count) || 0} />
+                        )}
                         <div className="flex items-start justify-between gap-2">
                           <h2 className="font-semibold text-foreground line-clamp-2">{product.name}</h2>
                           <span className="shrink-0 text-[11px] text-muted-foreground/70 pt-0.5">
