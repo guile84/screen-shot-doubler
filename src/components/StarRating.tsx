@@ -11,14 +11,11 @@ const StarRating = ({ rating, reviewCount, size = "sm" }: StarRatingProps) => {
   const textSize = size === "sm" ? "text-[10px]" : "text-xs";
 
   const formatCount = (count: number) => {
-    if (count >= 1000) {
-      return count.toLocaleString("pt-BR");
-    }
-    return String(count);
+    return count.toLocaleString("pt-BR");
   };
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5">
       <div className="flex">
         {[1, 2, 3, 4, 5].map((star) => {
           const fill = rating >= star ? 1 : rating >= star - 0.5 ? 0.5 : 0;
@@ -36,6 +33,9 @@ const StarRating = ({ rating, reviewCount, size = "sm" }: StarRatingProps) => {
           );
         })}
       </div>
+      <span className={`${textSize} font-medium text-muted-foreground`}>
+        ({rating.toFixed(0)}/5)
+      </span>
       {reviewCount != null && reviewCount > 0 && (
         <span className={`${textSize} text-muted-foreground`}>
           {formatCount(reviewCount)} avaliações

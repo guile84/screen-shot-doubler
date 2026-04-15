@@ -1,10 +1,13 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Copy, Check, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Copy, Check, ExternalLink, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import StarRating from "@/components/StarRating";
 import { Button } from "@/components/ui/button";
 import { useState, useCallback } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 
 function getEmbedUrl(url: string): string | null {
   try {
@@ -21,10 +24,15 @@ function getEmbedUrl(url: string): string | null {
   return null;
 }
 
+const priceChartConfig = {
+  price: { label: "Preço", color: "hsl(var(--primary))" },
+};
+
 const PublicProduct = () => {
   const { slug } = useParams<{ slug: string }>();
   const [copied, setCopied] = useState(false);
   const [imgIndex, setImgIndex] = useState(0);
+  const [priceOpen, setPriceOpen] = useState(false);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["public-product", slug],
@@ -49,6 +57,19 @@ const PublicProduct = () => {
         .select("id, url, is_main")
         .eq("product_id", product!.id)
         .order("is_main", { ascending: false });
+      return data ?? [];
+    },
+    enabled: !!product?.id,
+  });
+
+  const { data: priceHistory } = useQuery({
+    queryKey: ["public-price-history", product?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("price_history")
+        .select("price, recorded_at")
+        .eq("product_id", product!.id)
+        .order("recorded_at", { ascending: true });
       return data ?? [];
     },
     enabled: !!product?.id,
@@ -79,6 +100,12 @@ const PublicProduct = () => {
 
   const embedUrl = product.video_url ? getEmbedUrl(product.video_url) : null;
   const hasImages = images && images.length > 0;
+  const showPriceChart = priceHistory && priceHistory.length >= 2;
+
+  const chartData = priceHistory?.map((h) => ({
+    date: new Date(h.recorded_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+    price: Number(h.price),
+  })) ?? [];
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
@@ -135,8 +162,8 @@ const PublicProduct = () => {
 
           {/* Content */}
           <div className="space-y-4 p-6">
-            {(product as any).rating != null && Number((product as any).rating) > 0 && (
-              <StarRating rating={Number((product as any).rating)} reviewCount={Number((product as any).review_count) || 0} size="md" />
+            {product.rating != null && Number(product.rating) > 0 && (
+              <StarRating rating={Number(product.rating)} reviewCount={Number(product.review_count) || 0} size="md" />
             )}
             <h1 className="text-xl font-bold text-foreground">{product.name}</h1>
 
@@ -175,6 +202,45 @@ const PublicProduct = () => {
                 Ver produto
               </a>
             </Button>
+
+            {/* Price history collapsible */}
+            {showPriceChart && (
+              <Collapsible open={priceOpen} onOpenChange={setPriceOpen}>
+                <CollapsibleTrigger className="flex w-full items-center justify-center gap-1 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <ChevronDown className={`h-4 w-4 transition-transform ${priceOpen ? "rotate-180" : ""}`} />
+                  Ver histórico de preços
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="mt-2 rounded-lg border border-border bg-muted/30 p-4">
+                    <ChartContainer config={priceChartConfig} className="h-48 w-full">
+                      <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                        <XAxis dataKey="date" className="text-[10px]" tick={{ fontSize: 10 }} />
+                        <YAxis
+                          className="text-[10px]"
+                          tick={{ fontSize: 10 }}
+                          tickFormatter={(v) => `R$${v}`}
+                        />
+                        <ChartTooltip
+                          content={
+                            <ChartTooltipContent
+                              formatter={(value) => `R$ ${Number(value).toFixed(2).replace(".", ",")}`}
+                            />
+                          }
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="price"
+                          stroke="hsl(var(--primary))"
+                          strokeWidth={2}
+                          dot={{ fill: "hsl(var(--primary))", r: 3 }}
+                        />
+                      </LineChart>
+                    </ChartContainer>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
           </div>
         </div>
       </div>
