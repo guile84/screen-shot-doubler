@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Copy, Check, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
+import StarRating from "@/components/StarRating";
 import { Button } from "@/components/ui/button";
 import { useState, useCallback } from "react";
 
@@ -134,6 +135,9 @@ const PublicProduct = () => {
 
           {/* Content */}
           <div className="space-y-4 p-6">
+            {(product as any).rating != null && Number((product as any).rating) > 0 && (
+              <StarRating rating={Number((product as any).rating)} reviewCount={Number((product as any).review_count) || 0} size="md" />
+            )}
             <h1 className="text-xl font-bold text-foreground">{product.name}</h1>
 
             {product.price != null && (

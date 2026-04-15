@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Package, ShoppingBag, Copy, Check, Search, X, ExternalLink, Ticket, Globe } from "lucide-react";
+import StarRating from "@/components/StarRating";
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { format } from "date-fns";
@@ -59,7 +60,7 @@ const Portfolio = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, slug, price, original_price, final_price, payment_method, description, affiliate_url, created_at, main_image_id, coupon_code")
+        .select("id, name, slug, price, original_price, final_price, payment_method, description, affiliate_url, created_at, main_image_id, coupon_code, external_id, category, rating, review_count")
         .eq("status", "active")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -128,7 +129,9 @@ const Portfolio = () => {
       (p) =>
         normalize(p.name).includes(q) ||
         (p.description && normalize(p.description).includes(q)) ||
-        (p.coupon_code && normalize(p.coupon_code).includes(q))
+        (p.coupon_code && normalize(p.coupon_code).includes(q)) ||
+        ((p as any).external_id && normalize((p as any).external_id).includes(q)) ||
+        ((p as any).category && normalize((p as any).category).includes(q))
     );
   }, [products, search]);
 
@@ -283,6 +286,9 @@ const Portfolio = () => {
                         )}
                       </div>
                       <div className="space-y-3 p-4">
+                        {(product as any).rating != null && Number((product as any).rating) > 0 && (
+                          <StarRating rating={Number((product as any).rating)} reviewCount={Number((product as any).review_count) || 0} />
+                        )}
                         <div className="flex items-start justify-between gap-2">
                           <h2 className="font-semibold text-foreground line-clamp-2">{product.name}</h2>
                           <span className="shrink-0 text-[11px] text-muted-foreground/70 pt-0.5">
