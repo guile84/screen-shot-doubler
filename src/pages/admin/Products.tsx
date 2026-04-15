@@ -5,6 +5,7 @@ import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -16,10 +17,10 @@ import {
   Copy,
   Play,
   Pause,
-  ExternalLink,
   MousePointerClick,
   Loader2,
   Package,
+  DollarSign,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -32,6 +33,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type StatusFilter = "all" | "active" | "paused";
 
@@ -40,6 +48,10 @@ const Products = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [quickPriceProduct, setQuickPriceProduct] = useState<any>(null);
+  const [quickPrice, setQuickPrice] = useState("");
+  const [quickCoupon, setQuickCoupon] = useState("");
+  const [isSavingQuick, setIsSavingQuick] = useState(false);
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["admin-products"],
@@ -53,7 +65,21 @@ const Products = () => {
     },
   });
 
-  // Get click counts
+  // Get main images for products
+  const { data: mainImages } = useQuery({
+    queryKey: ["product-main-images"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("media")
+        .select("product_id, url")
+        .eq("is_main", true);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      data?.forEach((m) => { map[m.product_id] = m.url; });
+      return map;
+    },
+  });
+
   const { data: clickCounts } = useQuery({
     queryKey: ["product-click-counts"],
     queryFn: async () => {
@@ -103,6 +129,47 @@ const Products = () => {
     const url = `${window.location.origin}/p/${slug}`;
     navigator.clipboard.writeText(url);
     toast({ title: "Link copiado!" });
+  };
+
+  const openQuickPrice = (product: any) => {
+    setQuickPriceProduct(product);
+    setQuickPrice(product.final_price != null ? String(product.final_price) : (product.price != null ? String(product.price) : ""));
+    setQuickCoupon(product.coupon_code ?? "");
+  };
+
+  const handleQuickSave = async () => {
+    if (!quickPriceProduct) return;
+    setIsSavingQuick(true);
+    try {
+      const newFinal = quickPrice ? Number(quickPrice) : null;
+      const oldFinal = quickPriceProduct.final_price != null ? Number(quickPriceProduct.final_price) : (quickPriceProduct.price != null ? Number(quickPriceProduct.price) : null);
+
+      const payload: any = {
+        coupon_code: quickCoupon.trim().toUpperCase() || null,
+      };
+      if (newFinal != null) {
+        payload.final_price = newFinal;
+      }
+
+      const { error } = await supabase.from("products").update(payload).eq("id", quickPriceProduct.id);
+      if (error) throw error;
+
+      // Save price history if changed
+      if (newFinal != null && newFinal !== oldFinal) {
+        await supabase.from("price_history").insert({
+          product_id: quickPriceProduct.id,
+          price: newFinal,
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast({ title: "Atualizado!" });
+      setQuickPriceProduct(null);
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } finally {
+      setIsSavingQuick(false);
+    }
   };
 
   const statusFilters: { label: string; value: StatusFilter }[] = [
@@ -178,100 +245,162 @@ const Products = () => {
           </Card>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered?.map((product) => (
-              <Card key={product.id} className="shadow-card transition-shadow hover:shadow-card-hover">
-                <CardContent className="p-4">
-                  {/* Header */}
-                  <div className="mb-3 flex items-start justify-between">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate font-semibold text-foreground">{product.name}</h3>
-                      <p className="truncate text-xs text-muted-foreground">/p/{product.slug}</p>
-                    </div>
-                    <Badge
-                      variant={product.status === "active" ? "default" : "secondary"}
-                      className={
-                        product.status === "active"
-                          ? "bg-success text-success-foreground"
-                          : ""
-                      }
-                    >
-                      {product.status === "active" ? "Ativo" : "Pausado"}
-                    </Badge>
-                  </div>
-
-                  {/* Info */}
-                  <div className="mb-4 flex items-center gap-4 text-sm text-muted-foreground">
-                    {product.price != null && (
-                      <span className="font-medium text-foreground">
-                        R$ {Number(product.price).toFixed(2).replace(".", ",")}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1">
-                      <MousePointerClick className="h-3.5 w-3.5" />
-                      {clickCounts?.[product.id] ?? 0} cliques
-                    </span>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-wrap gap-1.5">
-                    <Link to={`/admin/produtos/${product.id}/editar`}>
-                      <Button variant="outline" size="sm">
-                        <Pencil className="h-3.5 w-3.5" />
-                        Editar
-                      </Button>
-                    </Link>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyPublicLink(product.slug)}
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      Link
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleToggleStatus(product.id, product.status)}
-                    >
-                      {product.status === "active" ? (
-                        <Pause className="h-3.5 w-3.5" />
+            {filtered?.map((product) => {
+              const thumb = mainImages?.[product.id];
+              const displayPrice = product.final_price ?? product.price;
+              return (
+                <Card key={product.id} className="shadow-card transition-shadow hover:shadow-card-hover overflow-hidden">
+                  <CardContent className="p-0">
+                    {/* Thumbnail */}
+                    <div className="relative h-32 bg-muted">
+                      {thumb ? (
+                        <img src={thumb} alt={product.name} className="h-full w-full object-cover" />
                       ) : (
-                        <Play className="h-3.5 w-3.5" />
+                        <div className="flex h-full items-center justify-center">
+                          <Package className="h-8 w-8 text-muted-foreground/50" />
+                        </div>
                       )}
-                      {product.status === "active" ? "Pausar" : "Ativar"}
-                    </Button>
+                      <Badge
+                        variant={product.status === "active" ? "default" : "secondary"}
+                        className={`absolute top-2 right-2 ${
+                          product.status === "active"
+                            ? "bg-success text-success-foreground"
+                            : ""
+                        }`}
+                      >
+                        {product.status === "active" ? "Ativo" : "Pausado"}
+                      </Badge>
+                    </div>
 
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                          <Trash2 className="h-3.5 w-3.5" />
+                    <div className="p-4">
+                      {/* Header */}
+                      <h3 className="truncate font-semibold text-foreground">{product.name}</h3>
+                      <p className="truncate text-xs text-muted-foreground mb-3">/p/{product.slug}</p>
+
+                      {/* Info */}
+                      <div className="mb-4 flex items-center gap-4 text-sm text-muted-foreground">
+                        {displayPrice != null && (
+                          <span className="font-medium text-foreground">
+                            R$ {Number(displayPrice).toFixed(2).replace(".", ",")}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <MousePointerClick className="h-3.5 w-3.5" />
+                          {clickCounts?.[product.id] ?? 0} cliques
+                        </span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-wrap gap-1.5">
+                        <Link to={`/admin/produtos/${product.id}/editar`}>
+                          <Button variant="outline" size="sm">
+                            <Pencil className="h-3.5 w-3.5" />
+                            Editar
+                          </Button>
+                        </Link>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openQuickPrice(product)}
+                        >
+                          <DollarSign className="h-3.5 w-3.5" />
+                          Preço
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir produto?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Isso excluirá permanentemente "{product.name}" e todos os dados
-                            relacionados (imagens, cliques).
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(product.id)}>
-                            Excluir
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyPublicLink(product.slug)}
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          Link
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleStatus(product.id, product.status)}
+                        >
+                          {product.status === "active" ? (
+                            <Pause className="h-3.5 w-3.5" />
+                          ) : (
+                            <Play className="h-3.5 w-3.5" />
+                          )}
+                          {product.status === "active" ? "Pausar" : "Ativar"}
+                        </Button>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir produto?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Isso excluirá permanentemente "{product.name}" e todos os dados
+                                relacionados (imagens, cliques).
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(product.id)}>
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
+
+      {/* Quick Price/Coupon Dialog */}
+      <Dialog open={!!quickPriceProduct} onOpenChange={(open) => !open && setQuickPriceProduct(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Preço e cupom — {quickPriceProduct?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="quick-price">Preço final (R$)</Label>
+              <Input
+                id="quick-price"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="299.90"
+                value={quickPrice}
+                onChange={(e) => setQuickPrice(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quick-coupon">Código de cupom</Label>
+              <Input
+                id="quick-coupon"
+                placeholder="PROMO10"
+                value={quickCoupon}
+                onChange={(e) => setQuickCoupon(e.target.value.toUpperCase())}
+                maxLength={50}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuickPriceProduct(null)}>Cancelar</Button>
+            <Button onClick={handleQuickSave} disabled={isSavingQuick}>
+              {isSavingQuick && <Loader2 className="h-4 w-4 animate-spin" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
