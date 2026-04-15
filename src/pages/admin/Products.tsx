@@ -173,6 +173,8 @@ const Products = () => {
       }
 
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["product", quickPriceProduct.id] });
+      queryClient.invalidateQueries({ queryKey: ["public-product"] });
       toast({ title: "Atualizado!" });
       setQuickPriceProduct(null);
     } catch (error: any) {
