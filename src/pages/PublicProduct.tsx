@@ -54,7 +54,7 @@ const PublicProduct = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("media")
-        .select("id, url, is_main")
+        .select("id, url, is_main, object_fit, focal_x, focal_y")
         .eq("product_id", product!.id)
         .order("is_main", { ascending: false });
       return data ?? [];
@@ -117,7 +117,11 @@ const PublicProduct = () => {
               <img
                 src={images[imgIndex].url}
                 alt={product.name}
-                className="h-full w-full object-cover"
+                className="h-full w-full"
+                style={{
+                  objectFit: ((images[imgIndex] as any).object_fit as any) || "cover",
+                  objectPosition: `${((images[imgIndex] as any).focal_x ?? 0.5) * 100}% ${((images[imgIndex] as any).focal_y ?? 0.5) * 100}%`,
+                }}
               />
               {images.length > 1 && (
                 <>
