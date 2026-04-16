@@ -162,24 +162,33 @@ export type Database = {
       media: {
         Row: {
           created_at: string
+          focal_x: number
+          focal_y: number
           id: string
           is_main: boolean
+          object_fit: string
           product_id: string
           type: string
           url: string
         }
         Insert: {
           created_at?: string
+          focal_x?: number
+          focal_y?: number
           id?: string
           is_main?: boolean
+          object_fit?: string
           product_id: string
           type?: string
           url: string
         }
         Update: {
           created_at?: string
+          focal_x?: number
+          focal_y?: number
           id?: string
           is_main?: boolean
+          object_fit?: string
           product_id?: string
           type?: string
           url?: string
@@ -222,6 +231,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_group_items: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          product_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          product_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          product_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_group_items_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "product_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_group_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_groups: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          slug: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       products: {
         Row: {
@@ -301,6 +379,7 @@ export type Database = {
         Row: {
           created_at: string
           icon_emoji: string | null
+          icon_image_url: string | null
           id: string
           sort_order: number
           status: string
@@ -311,6 +390,7 @@ export type Database = {
         Insert: {
           created_at?: string
           icon_emoji?: string | null
+          icon_image_url?: string | null
           id?: string
           sort_order?: number
           status?: string
@@ -321,6 +401,7 @@ export type Database = {
         Update: {
           created_at?: string
           icon_emoji?: string | null
+          icon_image_url?: string | null
           id?: string
           sort_order?: number
           status?: string
