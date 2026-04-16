@@ -15,7 +15,9 @@ import Stats from "./pages/admin/Stats.tsx";
 import CompanySettings from "./pages/admin/CompanySettings.tsx";
 import Coupons from "./pages/admin/Coupons.tsx";
 import SitesAdmin from "./pages/admin/Sites.tsx";
+import ProductGroups from "./pages/admin/ProductGroups.tsx";
 import PublicProduct from "./pages/PublicProduct.tsx";
+import PublicGroup from "./pages/PublicGroup.tsx";
 import GoRedirect from "./pages/GoRedirect.tsx";
 import Portfolio from "./pages/Portfolio.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -40,88 +42,19 @@ const App = () => {
             <Route path="/sites" element={<Portfolio />} />
             <Route path="/login" element={<Login />} />
             <Route path="/p/:slug" element={<PublicProduct />} />
+            <Route path="/g/:slug" element={<PublicGroup />} />
             <Route path="/go/:slug" element={<GoRedirect />} />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/produtos"
-              element={
-                <ProtectedRoute>
-                  <Products />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/produtos/novo"
-              element={
-                <ProtectedRoute>
-                  <NewProduct />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/produtos/:id/editar"
-              element={
-                <ProtectedRoute>
-                  <EditProduct />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/empresa"
-              element={
-                <ProtectedRoute>
-                  <CompanySettings />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/cupons"
-              element={
-                <ProtectedRoute>
-                  <Coupons />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/sites"
-              element={
-                <ProtectedRoute>
-                  <SitesAdmin />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/stats"
-              element={
-                <ProtectedRoute>
-                  <Stats />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/stats"
-              element={
-                <ProtectedRoute>
-                  <Stats />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/admin/produtos" element={<ProtectedRoute><Products /></ProtectedRoute>} />
+            <Route path="/admin/produtos/novo" element={<ProtectedRoute><NewProduct /></ProtectedRoute>} />
+            <Route path="/admin/produtos/:id/editar" element={<ProtectedRoute><EditProduct /></ProtectedRoute>} />
+            <Route path="/admin/empresa" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
+            <Route path="/admin/cupons" element={<ProtectedRoute><Coupons /></ProtectedRoute>} />
+            <Route path="/admin/sites" element={<ProtectedRoute><SitesAdmin /></ProtectedRoute>} />
+            <Route path="/admin/grupos" element={<ProtectedRoute><ProductGroups /></ProtectedRoute>} />
+            <Route path="/admin/stats" element={<ProtectedRoute><Stats /></ProtectedRoute>} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route
-              path="/admin/profile-links"
-              element={
-                <ProtectedRoute>
-                  <ProfileLinks />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/admin/profile-links" element={<ProtectedRoute><ProfileLinks /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
