@@ -54,7 +54,7 @@ const PublicProduct = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("media")
-        .select("id, url, is_main")
+        .select("id, url, is_main, object_fit, focal_x, focal_y")
         .eq("product_id", product!.id)
         .order("is_main", { ascending: false });
       return data ?? [];
@@ -117,7 +117,11 @@ const PublicProduct = () => {
               <img
                 src={images[imgIndex].url}
                 alt={product.name}
-                className="h-full w-full object-cover"
+                className="h-full w-full"
+                style={{
+                  objectFit: ((images[imgIndex] as any).object_fit as any) || "cover",
+                  objectPosition: `${((images[imgIndex] as any).focal_x ?? 0.5) * 100}% ${((images[imgIndex] as any).focal_y ?? 0.5) * 100}%`,
+                }}
               />
               {images.length > 1 && (
                 <>
@@ -167,11 +171,49 @@ const PublicProduct = () => {
             )}
             <h1 className="text-xl font-bold text-foreground">{product.name}</h1>
 
-            {product.price != null && (
-              <p className="text-2xl font-bold text-primary">
-                R$ {Number(product.price).toFixed(2).replace(".", ",")}
-              </p>
-            )}
+            {(() => {
+              const orig = product.original_price != null ? Number(product.original_price) : null;
+              const final_ = product.final_price != null ? Number(product.final_price) : null;
+              const price = product.price != null ? Number(product.price) : null;
+              const pm = product.payment_method;
+              const pmLabel = pm === "pix" ? " no Pix" : pm === "a_vista" ? " à vista" : "";
+
+              if (orig && final_) {
+                const discount = Math.round(((orig - final_) / orig) * 100);
+                return (
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm text-muted-foreground line-through">
+                      R$ {orig.toFixed(2).replace(".", ",")}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-primary">
+                        R$ {final_.toFixed(2).replace(".", ",")}{pmLabel}
+                      </span>
+                      {discount > 0 && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                          -{discount}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              if (final_) {
+                return (
+                  <span className="text-2xl font-bold text-primary">
+                    R$ {final_.toFixed(2).replace(".", ",")}{pmLabel}
+                  </span>
+                );
+              }
+              if (price != null) {
+                return (
+                  <span className="text-2xl font-bold text-primary">
+                    R$ {price.toFixed(2).replace(".", ",")}{pmLabel}
+                  </span>
+                );
+              }
+              return null;
+            })()}
 
             {product.description && (
               <p className="text-sm leading-relaxed text-muted-foreground">{product.description}</p>
