@@ -7,6 +7,7 @@ interface ProfileLink {
   title: string;
   url: string;
   icon_emoji: string;
+  icon_image_url: string | null;
   sort_order: number;
 }
 
@@ -52,7 +53,6 @@ const Profile = () => {
         )}
       </div>
 
-      {/* Company Name */}
       <h1 className="mb-1 text-2xl font-bold text-white drop-shadow-md">
         {company?.name || "Meu Perfil"}
       </h1>
@@ -69,7 +69,11 @@ const Profile = () => {
             className="group relative flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-5 py-4 text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:bg-white/20 hover:shadow-xl active:scale-[0.98]"
             style={{ animationDelay: `${i * 80}ms` }}
           >
-            <span className="text-xl">{link.icon_emoji}</span>
+            {link.icon_image_url ? (
+              <img src={link.icon_image_url} alt="" className="h-8 w-8 rounded-lg object-cover" />
+            ) : (
+              <span className="text-xl">{link.icon_emoji}</span>
+            )}
             <span className="flex-1 text-center font-medium">{link.title}</span>
             <ExternalLink className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-70" />
           </a>
@@ -80,11 +84,8 @@ const Profile = () => {
         )}
       </div>
 
-      {/* Footer */}
       <div className="mt-auto pt-12">
-        <p className="text-xs text-white/40">
-          {company?.name || "Perfil"}
-        </p>
+        <p className="text-xs text-white/40">{company?.name || "Perfil"}</p>
       </div>
     </div>
   );
