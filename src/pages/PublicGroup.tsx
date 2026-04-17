@@ -126,19 +126,18 @@ const PublicGroup = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card px-6 py-8">
+      <header className="border-b border-border bg-card px-6 py-5">
         <div className="mx-auto max-w-5xl">
-          <Link to="/profile" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
+          <Link to="/profile" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-3 transition-colors">
             <ArrowLeft className="h-4 w-4" /> Voltar
           </Link>
-          <div className="flex flex-col items-center text-center gap-3">
+          <div className="flex items-center gap-4">
             {company?.logo_url && (
-              <img src={company.logo_url} alt="" className="h-16 w-16 rounded-2xl object-contain" />
+              <img src={company.logo_url} alt="" className="h-14 w-14 flex-shrink-0 rounded-2xl object-contain" />
             )}
-            {company?.name && <p className="text-sm font-medium text-muted-foreground">{company.name}</p>}
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">{group.name}</h1>
-              {group.description && <p className="text-sm text-muted-foreground mt-1">{group.description}</p>}
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold text-foreground sm:text-2xl">{group.name}</h1>
+              {group.description && <p className="text-sm text-muted-foreground line-clamp-2">{group.description}</p>}
             </div>
           </div>
         </div>
