@@ -22,6 +22,7 @@ import {
   Loader2,
   Package,
   DollarSign,
+  ExternalLink,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -327,6 +328,21 @@ const Products = () => {
                         >
                           <Copy className="h-3.5 w-3.5" />
                           Link
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          title="Abrir em nova aba"
+                        >
+                          <a
+                            href={`/p/${product.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
                         </Button>
 
                         <Button
