@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Plus, Trash2, Pencil, Loader2, Save, X, FolderOpen, Copy, Search, Package,
+  Plus, Trash2, Pencil, Loader2, Save, X, FolderOpen, Copy, Search, Package, ExternalLink,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -196,6 +196,11 @@ const ProductGroups = () => {
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => copyGroupLink(g.slug)}>
                       <Copy className="h-3.5 w-3.5" /> Link
+                    </Button>
+                    <Button variant="outline" size="sm" asChild title="Abrir em nova aba">
+                      <a href={`/g/${g.slug}`} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
